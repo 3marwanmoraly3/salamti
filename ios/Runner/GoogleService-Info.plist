@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>377252386097-7h5cpblgl2lrcbk6kk6e6k10gbe3e96q.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.377252386097-7h5cpblgl2lrcbk6kk6e6k10gbe3e96q</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>377252386097-16apcjoauvmm9rasleiudehel2ptp76n.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBWEHy0leKJWj9LR0lVdjCB8MwhiZ1p_Dg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>377252386097</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.salamti</string>
+	<key>PROJECT_ID</key>
+	<string>salamti-30fd8</string>
+	<key>STORAGE_BUCKET</key>
+	<string>salamti-30fd8.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:377252386097:ios:c9e294b0e04ae579ec0c10</string>
+</dict>
+</plist>

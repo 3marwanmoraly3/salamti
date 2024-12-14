@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "377252386097",
+    "project_id": "salamti-30fd8",
+    "storage_bucket": "salamti-30fd8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:377252386097:android:32bf0a83ff184128ec0c10",
+        "android_client_info": {
+          "package_name": "com.example.salamti"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "377252386097-16apcjoauvmm9rasleiudehel2ptp76n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.salamti",
+            "certificate_hash": "1093b59cb96fdb644fdd440efd493c34fe9b0818"
+          }
+        },
+        {
+          "client_id": "377252386097-5qjnqhtvcm1obvurd3u84i188hb26q2s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2fU-Jdfj5ZnuHwBTp4OBb729O-EpLKlk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "377252386097-5qjnqhtvcm1obvurd3u84i188hb26q2s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "377252386097-7h5cpblgl2lrcbk6kk6e6k10gbe3e96q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.salamti"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
