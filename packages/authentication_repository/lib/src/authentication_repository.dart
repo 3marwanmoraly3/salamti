@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
@@ -68,6 +69,13 @@ class WrongCredentials implements Exception {
   @override
   String toString() {
     return "Wrong phone number or password.";
+  }
+}
+
+class AccountSuspended implements Exception {
+  @override
+  String toString() {
+    return "Account temporarily suspended for too many attempts.";
   }
 }
 
@@ -481,9 +489,13 @@ class AuthenticationRepository {
 
     String hashedPassword = DBCrypt().hashpw(password, DBCrypt().gensalt());
 
-    await users
-        .doc(userId)
-        .set({'Username': phone, 'UserType': 'c', 'Password': hashedPassword});
+    await users.doc(userId).set({
+      'Username': phone,
+      'UserType': 'c',
+      'Password': hashedPassword,
+      'LoginAttempts': 0,
+      'SuspensionDate': Timestamp.now(),
+    });
 
     await civilians.doc(civilianId).set({
       'UserID': userId,
@@ -493,7 +505,7 @@ class AuthenticationRepository {
       'DOB': '',
       'Allergies': [],
       'Conditions': [],
-      'EmergencyContacts': []
+      'EmergencyContacts': [],
     });
   }
 
@@ -508,14 +520,46 @@ class AuthenticationRepository {
           .get();
 
       if (querySnapshot.docs.isEmpty ||
-          querySnapshot.docs[0]["UserType"] != "c" ||
-          !DBCrypt().checkpw(password, querySnapshot.docs[0]["Password"])) {
+          querySnapshot.docs[0]["UserType"] != "c") {
         throw WrongCredentials();
+      }
+
+      DateTime suspensionDate = querySnapshot.docs[0]["SuspensionDate"].toDate();
+
+      if (suspensionDate.isAfter(DateTime.now())) {
+        throw AccountSuspended();
+      }
+
+      if (!DBCrypt().checkpw(password, querySnapshot.docs[0]["Password"])) {
+        CollectionReference users =
+            FirebaseFirestore.instance.collection('users');
+
+        if (querySnapshot.docs[0]["LoginAttempts"] < 3) {
+          final newLoginAttempts = querySnapshot.docs[0]["LoginAttempts"] + 1;
+          await users.doc(querySnapshot.docs[0].id).update({
+            'LoginAttempts': newLoginAttempts,
+          });
+
+          throw WrongCredentials();
+        }
+
+        DateTime dateNow = DateTime.now();
+        DateTime newDate = dateNow.add(const Duration(hours: 1));
+
+        await users.doc(querySnapshot.docs[0].id).update({
+          'LoginAttempts': 0,
+          'SuspensionDate': Timestamp.fromDate(newDate),
+        });
+
+        throw AccountSuspended();
       }
       await sendPhoneNumber(phone: phone);
     } on WrongCredentials catch (e) {
       print(e.toString());
       throw WrongCredentials();
+    } on AccountSuspended catch (e) {
+      print(e.toString());
+      throw AccountSuspended();
     } on SendPhoneNumberFailure catch (e) {
       print(e.toString());
       throw SendPhoneNumberFailure();
