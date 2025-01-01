@@ -38,3 +38,19 @@ final class EmergencyTypeChanged extends RequestEmergencyEvent {
 
   const EmergencyTypeChanged(this.type);
 }
+
+final class UpdateAnswer extends RequestEmergencyEvent {
+  final int index;
+  final dynamic answer;
+
+  const UpdateAnswer({
+    required this.index,
+    required this.answer,
+  });
+
+  List<Object?> get props => [index, answer];
+}
+
+final class SubmitAdditionalRequest extends RequestEmergencyEvent {
+  const SubmitAdditionalRequest();
+}

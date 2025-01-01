@@ -143,26 +143,209 @@ class AuthenticationRepository {
     _authenticationUserController.add(userAndCivilianId);
   }
 
+  Future<void> requestAdditionalEmergency(
+      {required questions, required answers, required latitude, required longitude}) async {
+    CollectionReference requests =
+        FirebaseFirestore.instance.collection('requests');
+    CollectionReference cases = FirebaseFirestore.instance.collection('cases');
+    CollectionReference esps = FirebaseFirestore.instance.collection('esps');
+    final civilianId = await getCivilianId();
+
+    Map<String, int> dispatch = {};
+
+    // Process each question to determine dispatch
+    questions!.asMap().forEach((index, question) {
+      if (!answers.containsKey(index)) return;
+
+      if (question.containsKey('boolAdd')) {
+        bool answer = answers[index];
+        if (answer) {
+          question['boolAdd']['dispatch'].forEach((unit, count) {
+            dispatch[unit] = (dispatch[unit] ?? 0) + (count as int);
+          });
+        }
+      } else if (question.containsKey('boolOr')) {
+        bool answer = answers[index];
+        if (answer) {
+          question['boolOr']['dispatch'].forEach((unit, count) {
+            dispatch[unit] = (dispatch[unit] ?? 0) + (count as int);
+          });
+        }
+      } else if (question.containsKey('numAdd')) {
+        int numberOfPeople = answers[index];
+        int perPerson = question['numAdd']['perPerson'];
+        int minimumPeople = question['numAdd']['minimumPeople'];
+
+        // Subtract minimum people to account for initial dispatch
+        int additionalPeople = numberOfPeople - minimumPeople;
+        if (additionalPeople > 0) {
+          int requiredUnits = (additionalPeople / perPerson).ceil();
+          question['numAdd']['dispatch'].forEach((unit, count) {
+            dispatch[unit] = (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
+          });
+        }
+      }
+    });
+
+    final questionsAndAnswers = questions!.asMap().entries.map((entry) {
+      String questionText = '';
+      if (entry.value.containsKey('string')) {
+        questionText = entry.value['string'] is List
+            ? entry.value['string'][0]
+            : entry.value['string']['questions'][0];
+      } else if (entry.value.containsKey('bool')) {
+        questionText = entry.value['bool']['question'];
+      } else if (entry.value.containsKey('boolMore')) {
+        questionText = entry.value['boolMore']['question'];
+      } else if (entry.value.containsKey('boolAdd')) {
+        questionText = entry.value['boolAdd']['question'];
+      } else if (entry.value.containsKey('boolOr')) {
+        questionText = entry.value['boolOr']['questions'][0];
+      } else if (entry.value.containsKey('num')) {
+        questionText = entry.value['num']['question'];
+      } else if (entry.value.containsKey('numAdd')) {
+        questionText = entry.value['numAdd']['question'];
+      }
+
+      dynamic answer = answers[entry.key];
+      if (answer is bool) {
+        answer = answer ? 'Yes' : 'No';
+      }
+
+      return {
+        'Question': questionText,
+        'Answer': answers.containsKey(entry.key) ? answer : null,
+      };
+    }).where((qa) => qa['Answer'] != null).toList();
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('requests')
+        .where('CivilianID', isEqualTo: civilianId)
+        .get();
+
+    final requestId = querySnapshot.docs[0].id;
+    final caseId = querySnapshot.docs[0]["CaseID"];
+    List<String> espIds = List<String>.from(querySnapshot.docs[0]["ESPIDs"]);
+    List<String> additionalESPs = await getNearestESPIds(dispatch: dispatch, latitude: latitude, longitude: longitude);
+
+    espIds.addAll(additionalESPs);
+
+    await cases.doc(caseId).update({
+      'ESPIDs': espIds,
+      'EmergencyDetails': questionsAndAnswers,
+    });
+
+    await requests.doc(requestId).update({
+      'ESPIDs': espIds,
+    });
+
+    for (String espId in additionalESPs) {
+      await esps.doc(espId).update({
+        'Availability': 'occupied'
+      });
+    }
+  }
+
   Future<void> requestEmergency(
       {required String emergencyType,
       required double latitude,
-      required double longitude}) async {
+      required double longitude,
+      required Map<String, int> initialDispatch}) async {
     CollectionReference requests =
         FirebaseFirestore.instance.collection('requests');
+    CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
-
     String requestId = requests.doc().id;
-
+    String caseId = cases.doc().id;
     final civilianId = await getCivilianId();
-    List<String> espIds = [];
 
-    await requests.doc(requestId).set({
+    List<String> espIds = await getNearestESPIds(
+      dispatch: initialDispatch,
+      latitude: latitude,
+      longitude: longitude,
+    );
+
+    await cases.doc(caseId).set({
       'CivilianID': civilianId,
       'CivilianLocation': GeoPoint(latitude, longitude),
       'ESPIDs': espIds,
       'EmergencyType': emergencyType,
       'EmergencyDetails': [],
+      'RequestTime': Timestamp.now(),
+      'Status': 'ongoing',
+      'ESPsArrivalTime': [],
+      'ESPsFinishTime': [],
     });
+
+    await requests.doc(requestId).set({
+      'CaseID': caseId,
+      'CivilianID': civilianId,
+      'ESPIDs': espIds,
+    });
+
+    for (String espId in espIds) {
+      await esps.doc(espId).update({
+        'Availability': 'occupied'
+      });
+    }
+  }
+
+  Future<List<String>> getNearestESPIds({
+    required Map<String, int> dispatch,
+    required double latitude,
+    required double longitude,
+  }) async {
+    List<String> espIds = [];
+
+    await Future.wait(
+      dispatch.entries.map((entry) async {
+        String type = entry.key;
+        int num = entry.value;
+
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('esps')
+            .where('ESPType', isEqualTo: type)
+            .where('Availability', isEqualTo: 'available')
+            .get();
+
+        final sortedESPs = sortESPsByDistance(
+            querySnapshot.docs.toList(), latitude, longitude);
+
+        for (int i = 0; i < num && i < sortedESPs.length; i++) {
+          espIds.add(sortedESPs[i].id);
+        }
+      }),
+    );
+
+    return espIds;
+  }
+
+  List<dynamic> sortESPsByDistance(
+      List<dynamic> esps, double targetLat, double targetLng) {
+    esps.sort((a, b) {
+      double distanceA = calculateDistance(targetLat, targetLng,
+          a["Location"].latitude, a["Location"].longitude);
+      double distanceB = calculateDistance(targetLat, targetLng,
+          b["Location"].latitude, b["Location"].longitude);
+      return distanceA.compareTo(distanceB);
+    });
+
+    return esps;
+  }
+
+  double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+    const R = 6371;
+    double dLat = (lat2 - lat1) * pi / 180;
+    double dLng = (lng2 - lng1) * pi / 180;
+
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1 * pi / 180) *
+            cos(lat2 * pi / 180) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return R * c;
   }
 
   Future<List<dynamic>> getEmergencyContacts() async {
@@ -524,7 +707,8 @@ class AuthenticationRepository {
         throw WrongCredentials();
       }
 
-      DateTime suspensionDate = querySnapshot.docs[0]["SuspensionDate"].toDate();
+      DateTime suspensionDate =
+          querySnapshot.docs[0]["SuspensionDate"].toDate();
 
       if (suspensionDate.isAfter(DateTime.now())) {
         throw AccountSuspended();

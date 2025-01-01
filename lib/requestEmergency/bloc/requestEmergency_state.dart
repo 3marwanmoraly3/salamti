@@ -1,5 +1,27 @@
 part of 'requestEmergency_bloc.dart';
 
+enum RequestEmergencyStatus {
+  pickLocation,
+  emergencyType,
+  emergencyDetails,
+  waiting
+}
+
+enum QuestionType { string, bool, num, boolMore, boolOr, boolAdd, numAdd }
+
+class EmergencyQuestion {
+  final String questionText;
+  final QuestionType type;
+  final Map<String, dynamic>?
+      additionalData; // For dispatch info, subquestions, etc
+
+  const EmergencyQuestion({
+    required this.questionText,
+    required this.type,
+    this.additionalData,
+  });
+}
+
 final class RequestEmergencyState extends Equatable {
   const RequestEmergencyState({
     this.longitude = 35.876200,
@@ -8,8 +30,9 @@ final class RequestEmergencyState extends Equatable {
     this.loading = false,
     this.autoCompleteList,
     this.emergencyType,
+    this.originalQuestions, // Add this
     this.questions,
-    this.answers,
+    this.answers = const {},
     this.errorMessage,
   });
 
@@ -19,8 +42,9 @@ final class RequestEmergencyState extends Equatable {
   final bool? loading;
   final List<dynamic>? autoCompleteList;
   final String? emergencyType;
-  final List<String>? questions;
-  final List<String>? answers;
+  final List<dynamic>? originalQuestions; // Add this
+  final List<dynamic>? questions;
+  final Map<int, dynamic> answers;
   final String? errorMessage;
 
   @override
@@ -31,6 +55,7 @@ final class RequestEmergencyState extends Equatable {
         loading,
         autoCompleteList,
         emergencyType,
+        originalQuestions,
         questions,
         answers,
         errorMessage,
@@ -43,8 +68,9 @@ final class RequestEmergencyState extends Equatable {
     bool? loading,
     List<dynamic>? autoCompleteList,
     String? emergencyType,
-    List<String>? questions,
-    List<String>? answers,
+    List<dynamic>? originalQuestions,
+    List<dynamic>? questions,
+    Map<int, dynamic>? answers,
     String? errorMessage,
   }) {
     return RequestEmergencyState(
@@ -54,18 +80,12 @@ final class RequestEmergencyState extends Equatable {
       loading: loading ?? this.loading,
       autoCompleteList: autoCompleteList ?? this.autoCompleteList,
       emergencyType: emergencyType ?? this.emergencyType,
+      originalQuestions: originalQuestions ?? this.originalQuestions,
       questions: questions ?? this.questions,
       answers: answers ?? this.answers,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
-}
-
-enum RequestEmergencyStatus {
-  pickLocation,
-  emergencyType,
-  emergencyDetails,
-  waiting
 }
 
 Map<String, Map<String, dynamic>> emergencyQuestions = {
@@ -89,7 +109,7 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       {
         "string": [
           "What symptoms are you/they experiencing (e.g., chest pain, difficulty breathing, severe bleeding)?",
-          "Is your/their patient’s condition worsening?"
+          "Is your/their condition worsening?"
         ]
       }
     ]
@@ -102,9 +122,10 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       },
       {
         "numAdd": {
-          "question": "Are there any injuries individuals?",
+          "question": "Are there any injured individuals?",
           "dispatch": {"ambulance": 1},
-          "perPerson": 1
+          "perPerson": 1,
+          "minimumPeople": 0
         }
       },
       {
@@ -119,7 +140,7 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       {
         "boolAdd": {
           "question": "Are any hazardous materials involved?",
-          "dispatch": {"hazmat": 1}
+          "dispatch": {"hazmatUnit": 1}
         }
       },
     ]
@@ -142,9 +163,10 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       },
       {
         "numAdd": {
-          "question": "Are there any injuries individuals?",
+          "question": "Are there any injured individuals?",
           "dispatch": {"ambulance": 1},
-          "perPerson": 1
+          "perPerson": 1,
+          "minimumPeople": 0
         }
       },
       {
@@ -156,7 +178,7 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
         "boolAdd": {
           "question":
               "Are hazardous materials involved (e.g., gas, chemicals)?",
-          "dispatch": {"hazmat": 1}
+          "dispatch": {"hazmatUnit": 1}
         }
       },
     ]
@@ -176,8 +198,10 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       },
       {
         "numAdd": {
-          "question": "Are there any injuries individuals?",
-          "dispatch": {"ambulance": 1}
+          "question": "Are there any injured individuals?",
+          "dispatch": {"ambulance": 1},
+          "perPerson": 1,
+          "minimumPeople": 0,
         }
       },
       {
@@ -222,9 +246,10 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       },
       {
         "numAdd": {
-          "question": "Are there any injuries individuals?",
+          "question": "Are there any injured individuals?",
           "dispatch": {"ambulance": 1},
-          "perPerson": 1
+          "perPerson": 1,
+          "minimumPeople": 0
         }
       },
       {
@@ -248,16 +273,18 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
       },
       {
         "numAdd": {
-          "question": "Are there any injuries individuals?",
+          "question": "Are there any injured individuals?",
           "dispatch": {"ambulance": 1},
-          "perPerson": 1
+          "perPerson": 1,
+          "minimumPeople": 0
         }
       },
       {
         "numAdd": {
           "question": "Are there any trapped individuals?",
           "dispatch": {"firetruck": 1},
-          "perPerson": 5
+          "perPerson": 5,
+          "minimumPeople": 0
         }
       },
       {
@@ -304,58 +331,204 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
     ]
   },
   "abduction": {
-    "initialDispatch": {},
+    "initialDispatch": {"police": 2},
     "questions": [
-      "Is this emergency for someone else?",
-      "Can you describe the victim and suspect?",
-      "How long ago did the abduction occur?",
-      "Was a vehicle involved? If so, provide details.",
-      "Is the victim a child, adult, or vulnerable person?",
-      "Do you have any information about their last known location?"
+      {
+        "bool": {
+          "question": "Is this emergency for someone else?",
+        }
+      },
+      {
+        "string": {
+          "questions": [
+            "Can you describe the victim (age, gender, clothing)?",
+            "Can you describe the suspect(s) (appearance, clothing)?",
+            "How long ago did the abduction occur?",
+            "Do you have information about their last known location?",
+          ]
+        }
+      },
+      {
+        "boolAdd": {
+          "question": "Was a vehicle involved in the abduction?",
+          "dispatch": {"police": 1}
+        }
+      },
+      {
+        "bool": {
+          "question": "Is the victim a child or vulnerable person?",
+        }
+      },
     ]
   },
   "burglary": {
-    "initialDispatch": {},
+    "initialDispatch": {"police": 1},
     "questions": [
-      "Is this emergency for someone else?",
-      "Is the suspect still present at the location?",
-      "Are there any weapons involved?",
-      "Are there any injuries?",
-      "Can you describe the suspect(s) and any vehicle involved?",
-      "Has any property been taken?"
+      {
+        "boolMore": {
+          "question": "Are the suspect(s) still present at the location?",
+          "subQuestions": [
+            {
+              "numAdd": {
+                "question": "How many suspects are involved?",
+                "dispatch": {"police": 1},
+                "perPerson": 3,
+                "minimumPeople": 3
+              }
+            },
+            {
+              "boolAdd": {
+                "question": "Are there any weapons involved?",
+                "dispatch": {"tacticalUnit": 1}
+              }
+            },
+          ]
+        }
+      },
+      {
+        "numAdd": {
+          "question": "Are there any injured individuals?",
+          "dispatch": {"ambulance": 1},
+          "perPerson": 1,
+          "minimumPeople": 0
+        }
+      },
+      {
+        "string": {
+          "questions": [
+            "Can you describe the suspect(s) and any vehicle involved?",
+          ]
+        }
+      },
     ]
   },
   "assault": {
-    "initialDispatch": {},
+    "initialDispatch": {"police": 1},
     "questions": [
-      "Is this emergency for someone else?",
-      "Are there any injuries? If so, what kind?",
-      "Is the suspect still nearby?",
-      "Was a weapon involved? If so, what type?",
-      "How many people are involved in the altercation?",
-      "Has the assault ceased, or is it ongoing?"
+      {
+        "bool": {
+          "question": "Is this emergency for someone else?",
+        }
+      },
+      {
+        "numAdd": {
+          "question": "Are there any injured individuals?",
+          "dispatch": {"ambulance": 1},
+          "perPerson": 1,
+          "minimumPeople": 0
+        }
+      },
+      {
+        "boolMore": {
+          "question": "Is the suspect(s) still at the scene?",
+          "subQuestions": [
+            {
+              "numAdd": {
+                "question": "How many people are involved in the altercation?",
+                "dispatch": {"police": 1},
+                "perPerson": 3,
+                "minimumPeople": 3
+              }
+            },
+            {
+              "bool": {
+                "question": "Is the assault still ongoing?",
+              }
+            },
+          ]
+        }
+      },
+      {
+        "boolAdd": {
+          "question": "Are any weapons involved?",
+          "dispatch": {"tacticalUnit": 1}
+        }
+      },
     ]
   },
   "domesticViolence": {
-    "initialDispatch": {},
+    "initialDispatch": {"police": 1},
     "questions": [
-      "Is this emergency for someone else?",
-      "Is the suspect still on the scene?",
-      "Are there any weapons involved?",
-      "Are there any injuries, and is medical assistance needed?",
-      "Have there been previous incidents of domestic violence?",
-      "Are there children or other vulnerable people present?"
+      {
+        "bool": {
+          "question": "Is this emergency for someone else?",
+        }
+      },
+      {
+        "bool": {
+          "question": "Is the suspect still present at the location?",
+        }
+      },
+      {
+        "boolAdd": {
+          "question": "Are any weapons involved?",
+          "dispatch": {"tacticalUnit": 1}
+        }
+      },
+      {
+        "numAdd": {
+          "question": "Are there any injured individuals?",
+          "dispatch": {"ambulance": 1},
+          "perPerson": 1,
+          "minimumPeople": 0
+        }
+      },
+      {
+        "bool": {
+          "question": "Are there children or vulnerable people present?",
+        }
+      },
+      {
+        "string": {
+          "questions": [
+            "Have there been previous incidents of domestic violence?",
+          ]
+        }
+      },
     ]
   },
   "trapped": {
-    "initialDispatch": {},
+    "initialDispatch": {"firetruck": 1},
     "questions": [
-      "Is this emergency for someone else?",
-      "What is causing the person to be trapped (e.g., collapsed building, elevator)?",
-      "Are you/they injured, or do you/they require medical assistance?",
-      "Can they communicate with you?",
-      "Are there any immediate risks to your/their safety (e.g., fire, flooding)?",
-      "Is there anyone else with you/them?"
+      {
+        "bool": {
+          "question": "Is this emergency for someone else?",
+        }
+      },
+      {
+        "string": {
+          "questions": [
+            "What is causing the person to be trapped (e.g., collapsed building, elevator)?",
+          ]
+        }
+      },
+      {
+        "numAdd": {
+          "question": "Are there any injured individuals?",
+          "dispatch": {"ambulance": 1},
+          "perPerson": 1,
+          "minimumPeople": 0
+        }
+      },
+      {
+        "bool": {
+          "question": "Can the trapped person(s) communicate?",
+        }
+      },
+      {
+        "boolAdd": {
+          "question": "Are there any immediate risks (e.g., fire, flooding)?",
+          "dispatch": {"firetruck": 1}
+        }
+      },
+      {
+        "numAdd": {
+          "question": "How many people are trapped?",
+          "dispatch": {"firetruck": 1},
+          "perPerson": 5,
+          "minimumPeople": 5
+        }
+      },
     ]
   }
 };
