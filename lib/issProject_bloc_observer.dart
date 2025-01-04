@@ -2,8 +2,8 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 
-class SalamtiBlocObserver extends BlocObserver {
-  const SalamtiBlocObserver();
+class IssProjectBlocObserver extends BlocObserver {
+  const IssProjectBlocObserver();
 
   @override
   void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {

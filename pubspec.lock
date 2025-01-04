@@ -302,13 +302,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.10"
-  google_maps_repository:
-    dependency: "direct main"
-    description:
-      path: "packages/google_maps_repository"
-      relative: true
-    source: path
-    version: "0.0.1"
   hive:
     dependency: transitive
     description:
@@ -811,5 +804,5 @@ packages:
     source: hosted
     version: "1.1.0"
 sdks:
-  dart: ">=3.4.4 <4.0.0"
+  dart: ">=3.4.0 <4.0.0"
   flutter: ">=3.22.0"

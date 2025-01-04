@@ -1,7 +1,7 @@
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:salamti/signup/signup.dart';
+import 'package:iss_2fa/signup/signup.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});

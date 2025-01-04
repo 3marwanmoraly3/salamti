@@ -24,12 +24,6 @@ final class PhoneChanged extends SignUpEvent {
   const PhoneChanged(this.phone);
 }
 
-final class NationalIdChanged extends SignUpEvent {
-  final String nationalId;
-
-  const NationalIdChanged(this.nationalId);
-}
-
 final class PasswordChanged extends SignUpEvent {
   final String password;
 

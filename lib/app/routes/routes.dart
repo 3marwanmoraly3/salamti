@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:salamti/app/app.dart';
-import 'package:salamti/home/home.dart';
-import 'package:salamti/login/login.dart';
-import 'package:salamti/splash/splash.dart';
+import 'package:iss_2fa/app/app.dart';
+import 'package:iss_2fa/home/home.dart';
+import 'package:iss_2fa/login/login.dart';
+import 'package:iss_2fa/splash/splash.dart';
 
 List<Page<dynamic>> onGenerateAppViewPages(
     AppStatus state,
