@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iss_2fa/changePassword/changePassword.dart';
+import 'package:salamti/changePassword/changePassword.dart';
 import 'package:formz/formz.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:timer_count_down/timer_count_down.dart';

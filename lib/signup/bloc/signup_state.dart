@@ -6,6 +6,7 @@ final class SignUpState extends Equatable {
   const SignUpState({
     this.name = const Name.pure(),
     this.phone = const Phone.pure(),
+    this.nationalId = const NationalId.pure(),
     this.password = const Password.pure(),
     this.confirmedPassword = const ConfirmedPassword.pure(),
     this.smsCode = const SmsCode.pure(),
@@ -19,6 +20,7 @@ final class SignUpState extends Equatable {
 
   final Name name;
   final Phone phone;
+  final NationalId nationalId;
   final Password password;
   final ConfirmedPassword confirmedPassword;
   final SmsCode smsCode;
@@ -33,6 +35,7 @@ final class SignUpState extends Equatable {
   List<Object?> get props => [
         name,
         phone,
+        nationalId,
         password,
         confirmedPassword,
         smsCode,
@@ -47,6 +50,7 @@ final class SignUpState extends Equatable {
   SignUpState copyWith(
       {Name? name,
       Phone? phone,
+      NationalId? nationalId,
       Password? password,
       ConfirmedPassword? confirmedPassword,
       SmsCode? smsCode,
@@ -59,6 +63,7 @@ final class SignUpState extends Equatable {
     return SignUpState(
         name: name ?? this.name,
         phone: phone ?? this.phone,
+        nationalId: nationalId ?? this.nationalId,
         password: password ?? this.password,
         confirmedPassword: confirmedPassword ?? this.confirmedPassword,
         smsCode: smsCode ?? this.smsCode,

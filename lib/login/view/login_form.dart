@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iss_2fa/login/login.dart';
-import 'package:iss_2fa/signup/signup.dart' show SignUpPage;
-import 'package:iss_2fa/changePassword/changePassword.dart'
+import 'package:salamti/login/login.dart';
+import 'package:salamti/signup/signup.dart' show SignUpPage;
+import 'package:salamti/changePassword/changePassword.dart'
     show ChangePasswordPage;
 import 'package:formz/formz.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -257,7 +257,7 @@ class _LoginInitial extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'ISS 2FA',
+                'Salamti',
                 style: TextStyle(fontSize: 44, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 80),

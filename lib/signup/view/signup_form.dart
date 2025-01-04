@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iss_2fa/signup/signup.dart';
+import 'package:salamti/signup/signup.dart';
 import 'package:formz/formz.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:timer_count_down/timer_count_down.dart';
@@ -15,6 +15,7 @@ class SignUpForm extends StatefulWidget {
 class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nationalIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -23,6 +24,7 @@ class _SignUpFormState extends State<SignUpForm> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _nationalIdController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -49,6 +51,7 @@ class _SignUpFormState extends State<SignUpForm> {
           return _SignUpInitial(
             nameController: _nameController,
             phoneController: _phoneController,
+            nationalIdController: _nationalIdController,
             passwordController: _passwordController,
             confirmPasswordController: _confirmPasswordController,
           );
@@ -244,12 +247,14 @@ class _SignUpButton extends StatelessWidget {
 class _SignUpInitial extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController phoneController;
+  final TextEditingController nationalIdController;
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
 
   const _SignUpInitial({
     required this.nameController,
     required this.phoneController,
+    required this.nationalIdController,
     required this.passwordController,
     required this.confirmPasswordController,
   });
@@ -284,6 +289,8 @@ class _SignUpInitial extends StatelessWidget {
               _NameInput(controller: nameController),
               const SizedBox(height: 2),
               _PhoneInput(controller: phoneController),
+              const SizedBox(height: 2),
+              _NationalIdInput(controller: nationalIdController),
               const SizedBox(height: 2),
               _PasswordInput(controller: passwordController),
               const SizedBox(height: 2),
@@ -373,6 +380,54 @@ class _PhoneInput extends StatelessWidget {
             helperText: '',
             errorText: state.phone.displayError != null
                 ? 'Invalid phone number'
+                : null,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(50),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(50),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(50),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _NationalIdInput extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _NationalIdInput({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SignUpBloc, SignUpState>(
+      buildWhen: (previous, current) =>
+          previous.nationalId != current.nationalId,
+      builder: (context, state) {
+        return TextField(
+          key: const Key('signUpForm_nationalIdInput_textField'),
+          controller: controller,
+          onChanged: (nationalId) =>
+              context.read<SignUpBloc>().add(NationalIdChanged(nationalId)),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          keyboardType: TextInputType.phone,
+          style: const TextStyle(fontSize: 22),
+          decoration: InputDecoration(
+            hintText: 'National ID',
+            helperText: '',
+            errorText: state.nationalId.displayError != null
+                ? 'Invalid national id'
                 : null,
             contentPadding:
                 const EdgeInsets.symmetric(vertical: 15, horizontal: 20),

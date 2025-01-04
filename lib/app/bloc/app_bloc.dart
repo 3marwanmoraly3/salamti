@@ -16,33 +16,36 @@ class AppBloc extends Bloc<AppEvent, AppState> {
     on<AppLogoutRequested>(_onLogoutRequested);
     _authenticationUserSubscription =
         _authenticationRepository.authenticationUser.listen(
-      (userId) => add(_AppAuthenticationUserChanged(
-          userId: userId)),
+      (userAndCivilianId) => add(_AppAuthenticationUserChanged(
+          userId: userAndCivilianId["userId"]!,
+          civilianId: userAndCivilianId["civilianId"]!)),
     );
 
     _checkInitialAuthenticationState();
   }
 
   final AuthenticationRepository _authenticationRepository;
-  late final StreamSubscription<String>
+  late final StreamSubscription<Map<String, String>>
       _authenticationUserSubscription;
 
   Future<void> _checkInitialAuthenticationState() async {
     final userId = await _authenticationRepository.getUserId();
-    if (userId != null) {
+    final civilianId = await _authenticationRepository.getCivilianId();
+    if (userId != null && civilianId != null) {
       add(_AppAuthenticationUserChanged(
-          userId: userId));
+          userId: userId, civilianId: civilianId));
     } else {
-      add(const _AppAuthenticationUserChanged(userId: ""));
+      add(const _AppAuthenticationUserChanged(userId: "", civilianId: ""));
     }
   }
 
   void _onAppAuthenticationUserChanged(
       _AppAuthenticationUserChanged event, Emitter<AppState> emit) {
     String userId = event.userId;
+    String username = event.civilianId;
     emit(
       userId.isNotEmpty
-          ? AppState.authenticated(userId: userId)
+          ? AppState.authenticated(userId: userId, civilianId: username)
           : const AppState.unauthenticated(),
     );
   }

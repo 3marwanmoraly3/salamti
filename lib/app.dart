@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flow_builder/flow_builder.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iss_2fa/app/app.dart';
+import 'package:salamti/app/app.dart';
 
-class IssProjectApp extends StatelessWidget {
+class SalamtiApp extends StatelessWidget {
   final AuthenticationRepository _authenticationRepository;
 
-  const IssProjectApp(
+  const SalamtiApp(
       {required AuthenticationRepository authenticationRepository, super.key})
       : _authenticationRepository = authenticationRepository;
 
