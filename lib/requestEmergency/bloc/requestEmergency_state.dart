@@ -3,6 +3,7 @@ part of 'requestEmergency_bloc.dart';
 enum RequestEmergencyStatus {
   pickLocation,
   emergencyType,
+  success
 }
 
 final class RequestEmergencyState extends Equatable {

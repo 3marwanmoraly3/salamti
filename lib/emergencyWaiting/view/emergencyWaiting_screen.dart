@@ -60,7 +60,6 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
       if (state.status == EmergencyWaitingStatus.waiting &&
           state.espIds != null &&
           state.caseId != null) {
-        print('Starting ESP tracking from initState');
         context.read<EspLocationBloc>().add(
               StartTrackingEsps(
                 espIds: List<String>.from(state.espIds!),
@@ -494,7 +493,9 @@ class _EmergencyDetailsState extends State<_EmergencyDetails> {
   Widget _emergencySurvey() {
     return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
       builder: (context, state) {
-        if (state.questions == null || state.questions!.isEmpty) {
+        if (state.questions == null) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state.questions!.isEmpty) {
           return const Center(child: Text('No questions available'));
         }
 

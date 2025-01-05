@@ -41,6 +41,7 @@ class RequestEmergencyBloc
             ?["initialDispatch"]);
     emit(
       state.copyWith(
+        status: RequestEmergencyStatus.success,
           loading: false),
     );
   }

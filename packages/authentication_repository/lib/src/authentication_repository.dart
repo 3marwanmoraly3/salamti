@@ -458,15 +458,19 @@ class AuthenticationRepository {
   }
 
   Future<String> getEmergencyWaitingStatus() async {
-    String id = await getCivilianId() ?? "";
+    try{
+      String civilianId = await getCivilianId() ?? "";
+      CollectionReference civilians =
+      FirebaseFirestore.instance.collection('civilians');
 
-    CollectionReference civilians =
-        FirebaseFirestore.instance.collection('civilians');
+      final civilianDoc = await civilians.doc(civilianId).get();
+      String emergencyWaitingStatus = civilianDoc["InEmergency"];
 
-    final civilianDoc = await civilians.doc(id).get();
-    final emergencyWaitingStatus = civilianDoc["InEmergency"];
-
-    return emergencyWaitingStatus;
+      return emergencyWaitingStatus;
+    } catch(e) {
+      print(e);
+    }
+    return "";
   }
 
   Future<Map<String, dynamic>> getInitialEmergencyWaitingDetails() async {

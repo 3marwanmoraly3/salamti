@@ -45,28 +45,30 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       _AppAuthenticationUserChanged event, Emitter<AppState> emit) async {
     String userId = event.userId;
     String username = event.civilianId;
-    final emergencyWaitingStatus =
-        await _authenticationRepository.getEmergencyWaitingStatus();
-    emit(
-      (userId.isNotEmpty)
-          ? (emergencyWaitingStatus == "no")
-              ? AppState.authenticated(userId: userId, civilianId: username)
-              : AppState.emergency(
-                  userId: userId,
-                  civilianId: username,
-                  emergencyWaitingStatus: emergencyWaitingStatus)
-          : const AppState.unauthenticated(),
-    );
+    dynamic appState = const AppState.unauthenticated();
+    if (userId.isNotEmpty) {
+      final emergencyWaitingStatus =
+          await _authenticationRepository.getEmergencyWaitingStatus();
+      if (emergencyWaitingStatus == "no") {
+        appState = AppState.authenticated(userId: userId, civilianId: username);
+      } else {
+        appState = AppState.emergency(
+            userId: userId,
+            civilianId: username,
+            emergencyWaitingStatus: emergencyWaitingStatus);
+      }
+    }
+    emit(appState);
   }
 
   void _onAppInEmergency(AppInEmergency event, Emitter<AppState> emit) async {
-    final userId = await _authenticationRepository.getUserId();
-    final civilianId = await _authenticationRepository.getCivilianId();
+    final userId = state.userId;
+    final civilianId = state.civilianId;
 
     emit(
       AppState.emergency(
-          userId: userId!,
-          civilianId: civilianId!,
+          userId: userId,
+          civilianId: civilianId,
           emergencyWaitingStatus: "survey"),
     );
   }
@@ -77,8 +79,9 @@ class AppBloc extends Bloc<AppEvent, AppState> {
 
     emit(
       AppState.authenticated(
-          userId: userId!,
-          civilianId: civilianId!,),
+        userId: userId!,
+        civilianId: civilianId!,
+      ),
     );
   }
 

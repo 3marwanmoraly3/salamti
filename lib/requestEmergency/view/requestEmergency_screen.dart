@@ -18,7 +18,12 @@ class _RequestEmergencyScreenState extends State<RequestEmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<RequestEmergencyBloc, RequestEmergencyState>(
-      listener: (context, state) {},
+      listener: (context, state) {
+        if (state.status == RequestEmergencyStatus.success) {
+          context.read<AppBloc>().add(const AppInEmergency());
+          Navigator.of(context).pop();
+        }
+      },
       builder: (context, state) {
         if (state.status == RequestEmergencyStatus.pickLocation) {
           return const _PickLocation();
@@ -171,8 +176,6 @@ class _EmergencyTypeState extends State<_EmergencyType> {
                   context
                       .read<RequestEmergencyBloc>()
                       .add(const EmergencyRequested());
-                  context.read<AppBloc>().add(const AppInEmergency());
-                  Navigator.of(context).pop();
                 },
           child: (state.loading!)
               ? const CircularProgressIndicator()

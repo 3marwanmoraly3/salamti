@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_repository/src/apiKeys.dart';
+import 'apiKeys.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

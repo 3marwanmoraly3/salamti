@@ -21,23 +21,19 @@ class EmergencyWaitingPage extends StatelessWidget {
         providers: [
           BlocProvider<EmergencyWaitingBloc>(
             create: (_) {
-              print('Creating EmergencyWaitingBloc');
               final bloc = EmergencyWaitingBloc(
                 googleMapsRepository: googleMapsRepository,
                 authenticationRepository: context.read<AuthenticationRepository>(),
               );
-              print('Created EmergencyWaitingBloc');
               return bloc;
             },
           ),
           BlocProvider<EspLocationBloc>(
             create: (_) {
-              print('Creating EspLocationBloc');
               final bloc = EspLocationBloc(
                 googleMapsRepository: googleMapsRepository,
                 authenticationRepository: context.read<AuthenticationRepository>(),
               );
-              print('Created EspLocationBloc');
               return bloc;
             },
           ),
