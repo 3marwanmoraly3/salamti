@@ -349,7 +349,7 @@ class AuthenticationRepository {
       await esps.doc(espId).update({'Availability': 'occupied'});
     }
 
-    civilians.doc(civilianId).update({'InEmergency': 'waiting'});
+    await civilians.doc(civilianId).update({'InEmergency': 'waiting'});
 
     return espIds;
   }
@@ -396,7 +396,7 @@ class AuthenticationRepository {
       await esps.doc(espId).update({'Availability': 'occupied'});
     }
 
-    civilians.doc(civilianId).update({'InEmergency': 'survey'});
+    await civilians.doc(civilianId).update({'InEmergency': 'survey'});
   }
 
   Future<List<String>> getNearestESPIds({
