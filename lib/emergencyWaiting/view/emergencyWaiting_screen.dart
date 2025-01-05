@@ -323,13 +323,14 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
                   ),
                 );
           }
-
-          if (context.read<EspLocationBloc>().state.isDone!) {
-            context.read<AppBloc>().add(const EmergencyDone());
-            Navigator.of(context).pop();
-          }
         },
-        child: BlocBuilder<EspLocationBloc, EspLocationState>(
+        child: BlocConsumer<EspLocationBloc, EspLocationState>(
+          listener: (context, state) {
+            if (state.isDone!) {
+              context.read<AppBloc>().add(const EmergencyDone());
+              Navigator.of(context).pop();
+            }
+          },
           builder: (context, espState) {
             return Stack(
               children: [
