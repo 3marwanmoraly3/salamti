@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'package:dbcrypt/dbcrypt.dart';
 import 'apiKeys.dart';
@@ -142,12 +143,111 @@ class AuthenticationRepository {
     _authenticationUserController.add(userAndCivilianId);
   }
 
-  Future<void> requestAdditionalEmergency(
-      {required questions, required answers, required latitude, required longitude}) async {
+  Stream<List<Map<String, dynamic>>> streamEspLocations(List<String> espIds, String caseId) {
+    if (espIds.isEmpty) {
+      return Stream.value([]);
+    }
+
+    try {
+      final espStream = FirebaseFirestore.instance
+          .collection('esps')
+          .where(FieldPath.documentId, whereIn: espIds)
+          .snapshots()
+          .map((snapshot) {
+
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+
+          return {
+            'id': doc.id,
+            'location': data['Location'],
+            'type': data['ESPType'],
+          };
+        }).toList();
+      });
+
+      final caseStream = FirebaseFirestore.instance
+          .collection('cases')
+          .doc(caseId)
+          .snapshots()
+          .map((doc) {
+        final arrivalTimeList = List<Map<String, dynamic>>.from(doc.data()?['ESPsArrivalTime'] ?? []);
+        final arrivedEspIds = arrivalTimeList.map((map) => map['ESPID'] as String).toList();
+        return arrivedEspIds;
+      });
+
+      return CombineLatestStream.combine2(
+        espStream,
+        caseStream,
+            (List<Map<String, dynamic>> esps, List<String> arrivedEspIds) {
+          final result = esps.map((esp) {
+            final arrived = arrivedEspIds.contains(esp['id']);
+
+            return {
+              ...esp,
+              'arrived': arrived,
+            };
+          }).toList();
+
+          return result;
+        },
+      ).handleError((error) {
+        print('Error in ESP location stream: $error');
+        return [];
+      });
+    } catch (e, stackTrace) {
+      print('Error setting up ESP location stream: $e');
+      print('Stack trace: $stackTrace');
+      return Stream.value([]);
+    }
+  }
+
+  Future<Map<String, dynamic>?> getEspDetails(String espId) async {
+    try {
+      final espDoc = await FirebaseFirestore.instance
+          .collection('esps')
+          .doc(espId)
+          .get();
+
+      if (!espDoc.exists) return null;
+
+      return {
+        'id': espDoc.id,
+        'location': espDoc.data()?['Location'],
+        'type': espDoc.data()?['ESPType'],
+        'status': espDoc.data()?['Status'],
+      };
+    } catch (e) {
+      print('Error getting ESP details: $e');
+      return null;
+    }
+  }
+
+  Future<bool> checkEspArrived(String espId, String caseId) async {
+    try {
+      final caseDoc = await FirebaseFirestore.instance
+          .collection('cases')
+          .doc(caseId)
+          .get();
+
+      final arrivedEsps = List<String>.from(caseDoc.data()?['ESPsArrivalTime'] ?? []);
+      return arrivedEsps.contains(espId);
+    } catch (e) {
+      print('Error checking ESP arrival: $e');
+      return false;
+    }
+  }
+
+  Future<List<String>> requestAdditionalEmergency(
+      {required questions,
+      required answers,
+      required latitude,
+      required longitude}) async {
     CollectionReference requests =
         FirebaseFirestore.instance.collection('requests');
     CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
     final civilianId = await getCivilianId();
 
     Map<String, int> dispatch = {};
@@ -180,42 +280,48 @@ class AuthenticationRepository {
         if (additionalPeople > 0) {
           int requiredUnits = (additionalPeople / perPerson).ceil();
           question['numAdd']['dispatch'].forEach((unit, count) {
-            dispatch[unit] = (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
+            dispatch[unit] =
+                (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
           });
         }
       }
     });
 
-    final questionsAndAnswers = questions!.asMap().entries.map((entry) {
-      String questionText = '';
-      if (entry.value.containsKey('string')) {
-        questionText = entry.value['string'] is List
-            ? entry.value['string'][0]
-            : entry.value['string']['questions'][0];
-      } else if (entry.value.containsKey('bool')) {
-        questionText = entry.value['bool']['question'];
-      } else if (entry.value.containsKey('boolMore')) {
-        questionText = entry.value['boolMore']['question'];
-      } else if (entry.value.containsKey('boolAdd')) {
-        questionText = entry.value['boolAdd']['question'];
-      } else if (entry.value.containsKey('boolOr')) {
-        questionText = entry.value['boolOr']['questions'][0];
-      } else if (entry.value.containsKey('num')) {
-        questionText = entry.value['num']['question'];
-      } else if (entry.value.containsKey('numAdd')) {
-        questionText = entry.value['numAdd']['question'];
-      }
+    final questionsAndAnswers = questions!
+        .asMap()
+        .entries
+        .map((entry) {
+          String questionText = '';
+          if (entry.value.containsKey('string')) {
+            questionText = entry.value['string'] is List
+                ? entry.value['string'][0]
+                : entry.value['string']['questions'][0];
+          } else if (entry.value.containsKey('bool')) {
+            questionText = entry.value['bool']['question'];
+          } else if (entry.value.containsKey('boolMore')) {
+            questionText = entry.value['boolMore']['question'];
+          } else if (entry.value.containsKey('boolAdd')) {
+            questionText = entry.value['boolAdd']['question'];
+          } else if (entry.value.containsKey('boolOr')) {
+            questionText = entry.value['boolOr']['questions'][0];
+          } else if (entry.value.containsKey('num')) {
+            questionText = entry.value['num']['question'];
+          } else if (entry.value.containsKey('numAdd')) {
+            questionText = entry.value['numAdd']['question'];
+          }
 
-      dynamic answer = answers[entry.key];
-      if (answer is bool) {
-        answer = answer ? 'Yes' : 'No';
-      }
+          dynamic answer = answers[entry.key];
+          if (answer is bool) {
+            answer = answer ? 'Yes' : 'No';
+          }
 
-      return {
-        'Question': questionText,
-        'Answer': answers.containsKey(entry.key) ? answer : null,
-      };
-    }).where((qa) => qa['Answer'] != null).toList();
+          return {
+            'Question': questionText,
+            'Answer': answers.containsKey(entry.key) ? answer : null,
+          };
+        })
+        .where((qa) => qa['Answer'] != null)
+        .toList();
 
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('requests')
@@ -225,7 +331,8 @@ class AuthenticationRepository {
     final requestId = querySnapshot.docs[0].id;
     final caseId = querySnapshot.docs[0]["CaseID"];
     List<String> espIds = List<String>.from(querySnapshot.docs[0]["ESPIDs"]);
-    List<String> additionalESPs = await getNearestESPIds(dispatch: dispatch, latitude: latitude, longitude: longitude);
+    List<String> additionalESPs = await getNearestESPIds(
+        dispatch: dispatch, latitude: latitude, longitude: longitude);
 
     espIds.addAll(additionalESPs);
 
@@ -239,10 +346,12 @@ class AuthenticationRepository {
     });
 
     for (String espId in additionalESPs) {
-      await esps.doc(espId).update({
-        'Availability': 'occupied'
-      });
+      await esps.doc(espId).update({'Availability': 'occupied'});
     }
+
+    civilians.doc(civilianId).update({'InEmergency': 'waiting'});
+
+    return espIds;
   }
 
   Future<void> requestEmergency(
@@ -254,6 +363,7 @@ class AuthenticationRepository {
         FirebaseFirestore.instance.collection('requests');
     CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
     String requestId = requests.doc().id;
     String caseId = cases.doc().id;
     final civilianId = await getCivilianId();
@@ -283,10 +393,10 @@ class AuthenticationRepository {
     });
 
     for (String espId in espIds) {
-      await esps.doc(espId).update({
-        'Availability': 'occupied'
-      });
+      await esps.doc(espId).update({'Availability': 'occupied'});
     }
+
+    civilians.doc(civilianId).update({'InEmergency': 'survey'});
   }
 
   Future<List<String>> getNearestESPIds({
@@ -345,6 +455,45 @@ class AuthenticationRepository {
 
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return R * c;
+  }
+
+  Future<String> getEmergencyWaitingStatus() async {
+    String id = await getCivilianId() ?? "";
+
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
+
+    final civilianDoc = await civilians.doc(id).get();
+    final emergencyWaitingStatus = civilianDoc["InEmergency"];
+
+    return emergencyWaitingStatus;
+  }
+
+  Future<Map<String, dynamic>> getInitialEmergencyWaitingDetails() async {
+    String id = await getCivilianId() ?? "";
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('requests')
+        .where('CivilianID', isEqualTo: id)
+        .get();
+
+    final espIds = querySnapshot.docs.first["ESPIDs"];
+    final caseId = querySnapshot.docs.first["CaseID"];
+
+    CollectionReference cases = FirebaseFirestore.instance.collection('cases');
+
+    final caseDoc = await cases.doc(caseId).get();
+    final emergencyType = caseDoc["EmergencyType"];
+    final longitude = caseDoc["CivilianLocation"].longitude;
+    final latitude = caseDoc["CivilianLocation"].latitude;
+
+    return {
+      "emergencyType": emergencyType,
+      "espIds": espIds,
+      "longitude": longitude,
+      "latitude": latitude,
+      "caseId": caseId
+    };
   }
 
   Future<List<dynamic>> getEmergencyContacts() async {
@@ -688,6 +837,7 @@ class AuthenticationRepository {
       'Allergies': [],
       'Conditions': [],
       'EmergencyContacts': [],
+      'InEmergency': "no",
     });
   }
 
@@ -757,7 +907,7 @@ class AuthenticationRepository {
       checkSmsCode(smsCode: smsCode);
 
       CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
+          FirebaseFirestore.instance.collection('users');
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')

@@ -60,6 +60,7 @@ dependencies:
   google_maps_flutter: ^2.7.0
   permission_handler: ^11.3.1
   location: ^7.0.0
+  lucide_icons: ^0.257.0
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +95,7 @@ flutter:
     - assets/home/images/
     - assets/profile/images/
     - assets/requestEmergency/images/
+    - assets/emergencyWaiting/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

@@ -23,8 +23,6 @@ class RequestEmergencyBloc
     on<SearchChanged>(_onSearchChanged);
     on<SearchPlaceId>(_onSearchPlaceId);
     on<EmergencyTypeChanged>(_onEmergencyTypeChanged);
-    on<UpdateAnswer>(_onUpdateAnswer);
-    on<SubmitAdditionalRequest>(_onSubmitAdditionalRequest);
   }
 
   final GoogleMapsRepository _googleMapsRepository;
@@ -39,66 +37,12 @@ class RequestEmergencyBloc
         emergencyType: state.emergencyType!,
         latitude: state.latitude!,
         longitude: state.longitude!,
-        initialDispatch: emergencyQuestions[state.emergencyType!]
+        initialDispatch: initialDispatchMap[state.emergencyType!]
             ?["initialDispatch"]);
-    final questions = emergencyQuestions[state.emergencyType!]?["questions"];
     emit(
       state.copyWith(
-          status: RequestEmergencyStatus.emergencyDetails,
-          questions: questions,
-          originalQuestions: questions,
           loading: false),
     );
-  }
-
-  void _onUpdateAnswer(
-    UpdateAnswer event,
-    Emitter<RequestEmergencyState> emit,
-  ) {
-    final currentAnswers = Map<int, dynamic>.from(state.answers);
-    currentAnswers[event.index] = event.answer;
-
-    if (state.questions![event.index].containsKey("boolMore")) {
-      final subQuestions =
-          state.questions![event.index]["boolMore"]["subQuestions"] as List;
-
-      // Create new questions list from original questions
-      final currentQuestions = List<dynamic>.from(state.originalQuestions!);
-
-      if (event.answer == true) {
-        // Insert subQuestions after the boolMore question
-        currentQuestions.insertAll(event.index + 1, subQuestions);
-      }
-
-      emit(state.copyWith(
-        questions: currentQuestions,
-        answers: currentAnswers,
-      ));
-    } else {
-      emit(state.copyWith(answers: currentAnswers));
-    }
-  }
-
-  Future<void> _onSubmitAdditionalRequest(
-      SubmitAdditionalRequest event,
-    Emitter<RequestEmergencyState> emit,
-  ) async {
-    try {
-      emit(state.copyWith(loading: true, errorMessage: null));
-
-      await _authenticationRepository.requestAdditionalEmergency(
-          questions: state.questions, answers: state.answers, longitude: state.longitude, latitude: state.latitude);
-
-      emit(state.copyWith(
-        loading: false,
-        status: RequestEmergencyStatus.waiting,
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        loading: false,
-        errorMessage: e.toString(),
-      ));
-    }
   }
 
   void _onStatusChanged(

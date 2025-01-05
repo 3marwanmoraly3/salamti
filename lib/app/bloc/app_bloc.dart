@@ -13,6 +13,8 @@ class AppBloc extends Bloc<AppEvent, AppState> {
       : _authenticationRepository = authenticationRepository,
         super(const AppState.initial()) {
     on<_AppAuthenticationUserChanged>(_onAppAuthenticationUserChanged);
+    on<AppInEmergency>(_onAppInEmergency);
+    on<EmergencyDone>(_onEmergencyDone);
     on<AppLogoutRequested>(_onLogoutRequested);
     _authenticationUserSubscription =
         _authenticationRepository.authenticationUser.listen(
@@ -40,13 +42,43 @@ class AppBloc extends Bloc<AppEvent, AppState> {
   }
 
   void _onAppAuthenticationUserChanged(
-      _AppAuthenticationUserChanged event, Emitter<AppState> emit) {
+      _AppAuthenticationUserChanged event, Emitter<AppState> emit) async {
     String userId = event.userId;
     String username = event.civilianId;
+    final emergencyWaitingStatus =
+        await _authenticationRepository.getEmergencyWaitingStatus();
     emit(
-      userId.isNotEmpty
-          ? AppState.authenticated(userId: userId, civilianId: username)
+      (userId.isNotEmpty)
+          ? (emergencyWaitingStatus == "no")
+              ? AppState.authenticated(userId: userId, civilianId: username)
+              : AppState.emergency(
+                  userId: userId,
+                  civilianId: username,
+                  emergencyWaitingStatus: emergencyWaitingStatus)
           : const AppState.unauthenticated(),
+    );
+  }
+
+  void _onAppInEmergency(AppInEmergency event, Emitter<AppState> emit) async {
+    final userId = await _authenticationRepository.getUserId();
+    final civilianId = await _authenticationRepository.getCivilianId();
+
+    emit(
+      AppState.emergency(
+          userId: userId!,
+          civilianId: civilianId!,
+          emergencyWaitingStatus: "survey"),
+    );
+  }
+
+  void _onEmergencyDone(EmergencyDone event, Emitter<AppState> emit) async {
+    final userId = await _authenticationRepository.getUserId();
+    final civilianId = await _authenticationRepository.getCivilianId();
+
+    emit(
+      AppState.authenticated(
+          userId: userId!,
+          civilianId: civilianId!,),
     );
   }
 

@@ -12,6 +12,14 @@ class _AppAuthenticationUserChanged extends AppEvent {
   final String civilianId;
 }
 
+final class AppInEmergency extends AppEvent {
+  const AppInEmergency();
+}
+
+final class EmergencyDone extends AppEvent {
+  const EmergencyDone();
+}
+
 final class AppLogoutRequested extends AppEvent {
   const AppLogoutRequested();
 }
