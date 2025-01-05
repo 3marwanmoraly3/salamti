@@ -373,7 +373,7 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
       bottomSheet: BlocBuilder<EspLocationBloc, EspLocationState>(
         builder: (context, state) {
           return Container(
-            height: MediaQuery.of(context).size.height * 0.4,
+            height: MediaQuery.of(context).size.height * 0.45,
             width: double.infinity,
             decoration: const BoxDecoration(
               color: Colors.black,
@@ -402,7 +402,7 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
                       child: Center(
                         child: Text(
                           'Waiting for emergency services...',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: Colors.white, fontSize: 20),
                         ),
                       ),
                     )
@@ -412,11 +412,46 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
                         child: _buildEtaList(state),
                       ),
                     ),
+                  const SizedBox(height: 10),
+                  _emergencyGuidesButton(),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _emergencyGuidesButton() {
+    return Container(
+      width: 400,
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: const BoxDecoration(
+        color: Color(0x82d9d9d9),
+        borderRadius: BorderRadius.all(
+          Radius.circular(15),
+        ),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Emergency Guides",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Image(
+            image:
+            AssetImage("assets/emergencyWaiting/images/cpr.png"),
+            width: 30,
+          ),
+        ],
       ),
     );
   }
