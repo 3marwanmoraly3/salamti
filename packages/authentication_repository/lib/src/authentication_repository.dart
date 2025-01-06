@@ -838,6 +838,7 @@ class AuthenticationRepository {
       'NationalID': nationalId,
       'Gender': '',
       'DOB': '',
+      'BloodType': '',
       'Allergies': [],
       'Conditions': [],
       'EmergencyContacts': [],
