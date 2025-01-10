@@ -388,8 +388,8 @@ class _EmergencyContacts extends StatelessWidget {
                         const Divider(thickness: 1, color: Colors.black26),
                     itemBuilder: (context, index) {
                       final contact = state.emergencyContacts[index];
-                      final String name = contact["name"];
-                      final String phone = contact["phone"];
+                      final String name = contact["Name"];
+                      final String phone = contact["Phone"];
                       final shortPhone = phone.substring(1);
                       return ListTile(
                         title: Text(

@@ -540,7 +540,7 @@ class AuthenticationRepository {
 
       await docRef.update({
         'EmergencyContacts': FieldValue.arrayUnion([
-          {'name': name, 'phone': newPhone}
+          {'Name': name, 'Phone': newPhone}
         ]),
       });
     } on EmergencyContactExists catch (e) {
@@ -575,7 +575,7 @@ class AuthenticationRepository {
       DocumentReference docRef = querySnapshot.docs[0].reference;
       List<dynamic> contacts = querySnapshot.docs[0].get('EmergencyContacts');
 
-      contacts[index] = {'name': name, 'phone': newPhone};
+      contacts[index] = {'Name': name, 'Phone': newPhone};
       await docRef.update({'EmergencyContacts': contacts});
     } on EmergencyContactExists catch (e) {
       print(e.toString());
@@ -604,7 +604,7 @@ class AuthenticationRepository {
 
       await docRef.update({
         'EmergencyContacts': FieldValue.arrayRemove([
-          {'name': name, 'phone': newPhone}
+          {'Name': name, 'Phone': newPhone}
         ]),
       });
     } on EmergencyContactExists catch (e) {
@@ -629,11 +629,11 @@ class AuthenticationRepository {
     for (int i = 0; i < contacts.length; i++) {
       if (i != index) {
         final contact = contacts[i];
-        if (contact["name"] == name) {
+        if (contact["Name"] == name) {
           throw EmergencyContactExists();
         }
 
-        if (contact["phone"] == phone) {
+        if (contact["Phone"] == phone) {
           throw EmergencyContactNameExists();
         }
       }
@@ -853,6 +853,7 @@ class AuthenticationRepository {
       'Allergies': [],
       'Conditions': [],
       'EmergencyContacts': [],
+      'SavedLocations': [],
       'InEmergency': "no",
     });
   }
