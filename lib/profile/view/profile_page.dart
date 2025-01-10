@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salamti/app/app.dart';
+import 'package:salamti/changePassword/changePassword.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -52,23 +53,10 @@ class ProfilePage extends StatelessWidget {
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                ),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const Image(
-                    image: AssetImage("assets/profile/images/password.png"),
-                    width: 30,
-                  ),
-                  title: const Text(
-                    "Security",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                  ),
-                  tileColor: const Color(0x82d9d9d9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(ChangePasswordPage.route());
+                  },
                 ),
                 const SizedBox(height: 20),
                 ListTile(

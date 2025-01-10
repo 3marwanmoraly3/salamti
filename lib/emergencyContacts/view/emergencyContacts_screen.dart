@@ -385,7 +385,7 @@ class _EmergencyContacts extends StatelessWidget {
                 child: ListView.separated(
                     itemCount: state.emergencyContacts.length,
                     separatorBuilder: (context, index) =>
-                        const Divider(thickness: 1),
+                        const Divider(thickness: 1, color: Colors.black26),
                     itemBuilder: (context, index) {
                       final contact = state.emergencyContacts[index];
                       final String name = contact["name"];

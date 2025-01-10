@@ -500,6 +500,17 @@ class AuthenticationRepository {
     };
   }
 
+  Future<List<dynamic>> getPastActivities() async {
+    String id = await getCivilianId() ?? "";
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('cases')
+        .where('CivilianID', isEqualTo: id)
+        .get();
+
+    return querySnapshot.docs as List<dynamic>;
+  }
+
   Future<List<dynamic>> getEmergencyContacts() async {
     String id = await getUserId() ?? "";
 

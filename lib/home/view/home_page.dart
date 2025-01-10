@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:salamti/emergencyContacts/emergencyContacts.dart';
 import 'package:salamti/profile/profile.dart';
 import 'package:salamti/requestEmergency/requestEmergency.dart';
+import 'package:salamti/pastActivities/pastActivities.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -81,7 +82,11 @@ class _TopNavBar extends StatelessWidget {
                                   child: Column(
                                     children: [
                                       IconButton(
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          Navigator.of(context).push<void>(
+                                              PastActivitiesPage.route());
+                                        },
                                         icon: const Icon(
                                           Icons.access_time_filled_rounded,
                                           color: Colors.black,
