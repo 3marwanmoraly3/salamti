@@ -431,31 +431,7 @@ class _PickLocationState extends State<_PickLocation> {
           ),
           const SizedBox(height: 20),
           _SearchInput(),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.star,
-                  color: Colors.white,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  "Saved Locations",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ],
-            ),
-          ),
-          const Divider(
-            color: Color(0x82d9d9d9),
-            thickness: 3,
-          ),
+          const SizedBox(height: 20),
           _autoCompleteList(),
         ],
       ),
