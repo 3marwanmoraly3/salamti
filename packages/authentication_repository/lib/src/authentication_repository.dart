@@ -500,6 +500,16 @@ class AuthenticationRepository {
     };
   }
 
+  Future<Map<String, dynamic>> getCivilianData() async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    final civilianDoc = await civilians.doc(id).get();
+    final civilianData = civilianDoc.data();
+
+    return civilianData as Map<String, dynamic>;
+  }
+
   Future<List<dynamic>> getPastActivities() async {
     String id = await getCivilianId() ?? "";
 
@@ -509,6 +519,48 @@ class AuthenticationRepository {
         .get();
 
     return querySnapshot.docs as List<dynamic>;
+  }
+
+  Future<void> updateGender(String gender) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"Gender": gender});
+  }
+
+  Future<void> updateBloodType(String bloodType) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"BloodType": bloodType});
+  }
+
+  Future<void> updateDOB(String dob) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"DOB": dob});
+  }
+
+  Future<void> updateConditions(List<dynamic> conditions) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"Conditions": conditions});
+  }
+
+  Future<void> updateAllergies(List<dynamic> allergies) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"Allergies": allergies});
+  }
+
+  Future<void> updateMedications(List<dynamic> medications) async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+    await civilians.doc(id).update({"Medications": medications});
   }
 
   Future<List<dynamic>> getEmergencyContacts() async {
@@ -852,6 +904,7 @@ class AuthenticationRepository {
       'BloodType': '',
       'Allergies': [],
       'Conditions': [],
+      'Medications': [],
       'EmergencyContacts': [],
       'SavedLocations': [],
       'InEmergency': "no",

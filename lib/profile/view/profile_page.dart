@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salamti/app/app.dart';
+import 'package:salamti/medicalId/medicalId.dart';
 import 'package:salamti/changePassword/changePassword.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -74,6 +75,10 @@ class ProfilePage extends StatelessWidget {
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(MedicalIdPage.route());
+                  },
                 ),
                 const SizedBox(height: 20),
                 ListTile(

@@ -7,7 +7,7 @@ class MedicalInfo extends FormzInput<String, MedicalInfoValidationError> {
 
   const MedicalInfo.dirty([super.value = '']) : super.dirty();
 
-  static final _medicalInfoRegExp = RegExp(r'^[a-zA-Z0-9\s]+$');
+  static final _medicalInfoRegExp = RegExp(r'^[a-zA-Z0-9\s]*$');
 
   @override
   MedicalInfoValidationError? validator(String? value) {
