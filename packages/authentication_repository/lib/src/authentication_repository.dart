@@ -239,8 +239,6 @@ class AuthenticationRepository {
     }
   }
 
-  // In authentication_repository.dart
-
   Future<List<String>> requestAdditionalEmergency({
     required questions,
     required answers,
@@ -448,6 +446,48 @@ class AuthenticationRepository {
     }
 
     await civilians.doc(civilianId).update({'InEmergency': 'survey'});
+
+    final civilianDoc = await civilians.doc(civilianId).get();
+    final emergencyContacts = civilianDoc.get("EmergencyContacts");
+
+    for(final contact in emergencyContacts) {
+      String phone = "962${contact["Phone"]}";
+      String name = civilianDoc.get("Name");
+      String link = "https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}";
+      String type = formatEmergencyType(emergencyType);
+      sendNotification(phone: phone, type: type, link: link, name: name);
+    }
+  }
+
+  String formatEmergencyType(String type) {
+    switch (type) {
+      case "medical":
+        return "Medical";
+      case "carCrash":
+        return "Car Crash";
+      case "fire":
+        return "Fire";
+      case "pedestrianCollision":
+        return "Pedestrian Collision";
+      case "armedThreat":
+        return "Armed Threat";
+      case "naturalDisaster":
+        return "Natural Disaster";
+      case "suicideAttempt":
+        return "Suicide Attempt";
+      case "abduction":
+        return "Abduction";
+      case "burglary":
+        return "Burglary";
+      case "assault":
+        return "Assault";
+      case "domesticViolence":
+        return "Domestic Violence";
+      case "trapped":
+        return "Trapped";
+      default:
+        return type;
+    }
   }
 
   Future<List<String>> getNearestESPIds({
@@ -635,7 +675,6 @@ class AuthenticationRepository {
   Future<void> addEmergencyContact(
       {required String name, required String phone}) async {
     try {
-      String newPhone = '0$phone';
       String id = await getUserId() ?? "";
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -644,13 +683,13 @@ class AuthenticationRepository {
           .get();
 
       await checkEmergencyContactDoesNotExist(
-          querySnapshot: querySnapshot, name: name, phone: newPhone, index: -1);
+          querySnapshot: querySnapshot, name: name, phone: phone, index: -1);
 
       DocumentReference docRef = querySnapshot.docs[0].reference;
 
       await docRef.update({
         'EmergencyContacts': FieldValue.arrayUnion([
-          {'Name': name, 'Phone': newPhone}
+          {'Name': name, 'Phone': phone}
         ]),
       });
     } on EmergencyContactExists catch (e) {
@@ -668,7 +707,6 @@ class AuthenticationRepository {
   Future<void> editEmergencyContact(
       {required String name, required String phone, required int index}) async {
     try {
-      String newPhone = '0$phone';
       String id = await getUserId() ?? "";
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -679,13 +717,13 @@ class AuthenticationRepository {
       await checkEmergencyContactDoesNotExist(
           querySnapshot: querySnapshot,
           name: name,
-          phone: newPhone,
+          phone: phone,
           index: index);
 
       DocumentReference docRef = querySnapshot.docs[0].reference;
       List<dynamic> contacts = querySnapshot.docs[0].get('EmergencyContacts');
 
-      contacts[index] = {'Name': name, 'Phone': newPhone};
+      contacts[index] = {'Name': name, 'Phone': phone};
       await docRef.update({'EmergencyContacts': contacts});
     } on EmergencyContactExists catch (e) {
       print(e.toString());
@@ -702,7 +740,6 @@ class AuthenticationRepository {
   Future<void> removeEmergencyContact(
       {required String name, required String phone}) async {
     try {
-      String newPhone = '0$phone';
       String id = await getUserId() ?? "";
 
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -714,7 +751,7 @@ class AuthenticationRepository {
 
       await docRef.update({
         'EmergencyContacts': FieldValue.arrayRemove([
-          {'Name': name, 'Phone': newPhone}
+          {'Name': name, 'Phone': phone}
         ]),
       });
     } on EmergencyContactExists catch (e) {
@@ -782,6 +819,50 @@ class AuthenticationRepository {
               {"type": "text", "text": verificationId}
             ]
           }
+        ]
+      }
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        print('Message sent successfully');
+        print('Response: ${response.body}');
+      } else {
+        print('Failed to send message. Status code: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (_) {
+      throw SendPhoneNumberFailure();
+    }
+  }
+
+  Future<void> sendNotification({required String phone, required String name, required String type, required String link}) async {
+    final url =
+    Uri.parse('https://graph.facebook.com/v20.0/341497479053548/messages');
+
+    final headers = {
+      'Authorization': 'Bearer $whatsappAPIKey',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      "messaging_product": "whatsapp",
+      "to": phone,
+      "type": "template",
+      "template": {
+        "name": "emergency_alert",
+        "language": {"code": "en"},
+        "components": [
+          {
+            "type": "body",
+            "parameters": [
+              {"type": "text", "text": name, "parameter_name": "user_name"},
+              {"type": "text", "text": type, "parameter_name": "emergency_type"},
+              {"type": "text", "text": link, "parameter_name": "location_link"},
+            ]
+          },
         ]
       }
     });

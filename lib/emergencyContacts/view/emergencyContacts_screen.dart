@@ -398,7 +398,7 @@ class _EmergencyContacts extends StatelessWidget {
                               fontSize: 24, fontWeight: FontWeight.w500),
                         ),
                         subtitle: Text(
-                          phone,
+                          "0$phone",
                           style: const TextStyle(fontSize: 20),
                         ),
                         trailing: IconButton(

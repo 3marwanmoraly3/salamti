@@ -310,14 +310,14 @@ class _EmergencyResources extends StatelessWidget {
           child: const Stack(
             children: [
               Text(
-                "Helpful\nLocations",
+                "Important\nHotlines",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
               ),
               Positioned(
                 right: 0,
                 bottom: 0,
                 child: Image(
-                  image: AssetImage("assets/home/images/map.png"),
+                  image: AssetImage("assets/home/images/hotline.png"),
                   width: 35,
                   height: 35,
                 ),
