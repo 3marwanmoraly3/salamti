@@ -58,32 +58,31 @@ class EmergencyWaitingBloc
     ));
   }
 
-  void _onUpdateAnswer(
-    UpdateAnswer event,
-    Emitter<EmergencyWaitingState> emit,
-  ) {
+  void _onUpdateAnswer(UpdateAnswer event, Emitter<EmergencyWaitingState> emit) {
     final currentAnswers = Map<int, dynamic>.from(state.answers);
-    currentAnswers[event.index] = event.answer;
 
     if (state.questions![event.index].containsKey("boolMore")) {
-      final subQuestions =
-          state.questions![event.index]["boolMore"]["subQuestions"] as List;
-
-      // Create new questions list from original questions
-      final currentQuestions = List<dynamic>.from(state.originalQuestions!);
-
-      if (event.answer == true) {
-        // Insert subQuestions after the boolMore question
-        currentQuestions.insertAll(event.index + 1, subQuestions);
+      // Handle boolMore answer structure
+      if (event.answer is Map<String, dynamic>) {
+        final newAnswer = event.answer as Map<String, dynamic>;
+        // Ensure we're not nesting answers recursively
+        currentAnswers[event.index] = {
+          'mainAnswer': newAnswer['mainAnswer'],
+          'subAnswers': Map<String, String>.from(newAnswer['subAnswers'] ?? {}),
+        };
+      } else {
+        // If it's just a boolean value, initialize the structure
+        currentAnswers[event.index] = {
+          'mainAnswer': event.answer,
+          'subAnswers': {},
+        };
       }
-
-      emit(state.copyWith(
-        questions: currentQuestions,
-        answers: currentAnswers,
-      ));
     } else {
-      emit(state.copyWith(answers: currentAnswers));
+      // Handle other question types normally
+      currentAnswers[event.index] = event.answer;
     }
+
+    emit(state.copyWith(answers: currentAnswers));
   }
 
   Future<void> _onSubmitAdditionalRequest(

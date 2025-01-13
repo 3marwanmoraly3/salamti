@@ -122,8 +122,10 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
         try {
           final iconData = await BitmapDescriptor.asset(
             ImageConfiguration(
-              size: (entry.key == "destination") ? Size(24, 24) : Size(30, 60),  // Very small base size
-              devicePixelRatio: 2,  // Reduced ratio to make icons smaller
+              size: (entry.key == "destination")
+                  ? Size(24, 24)
+                  : Size(30, 60), // Very small base size
+              devicePixelRatio: 2, // Reduced ratio to make icons smaller
             ),
             entry.value,
           );
@@ -152,7 +154,8 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
         final prevLocation = previousLocations[espId]!;
         if (prevLocation != currentLocation) {
           // Add 180 degrees to flip the direction
-          rotation = (_calculateBearing(prevLocation, currentLocation) + 180) % 360;
+          rotation =
+              (_calculateBearing(prevLocation, currentLocation) + 180) % 360;
           print('ESP $espId rotation: $rotation degrees');
         }
       }
@@ -447,8 +450,7 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
             ),
           ),
           Image(
-            image:
-            AssetImage("assets/emergencyWaiting/images/cpr.png"),
+            image: AssetImage("assets/emergencyWaiting/images/cpr.png"),
             width: 30,
           ),
         ],
@@ -471,157 +473,87 @@ class _EmergencyDetails extends StatefulWidget {
 }
 
 class _EmergencyDetailsState extends State<_EmergencyDetails> {
+  final Map<String, TextEditingController> _controllers = {};
+
+  @override
+  void dispose() {
+    for (var controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _getController(String key, String initialText) {
+    if (!_controllers.containsKey(key)) {
+      _controllers[key] = TextEditingController(text: initialText);
+    } else if (_controllers[key]!.text != initialText) {
+      _controllers[key]!.text = initialText;
+    }
+    return _controllers[key]!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.only(left: 20, top: 60, right: 20),
-        child: ListView(
+      body: SafeArea(
+        child: Column(
           children: [
-            const Text(
-              "Help is on the way!",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Text(
+                    "Help is on the way!",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    "If you can, please answer these questions to ensure the right resources are sent and any extra help arrives quickly.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            const Text(
-              "If you can, please answer these questions to ensure the right resources are sent and any extra help arrives quickly.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildQuestions(),
+                ),
+              ),
             ),
-            const SizedBox(height: 5),
-            _emergencySurvey(),
-            _submitSurveyButton(),
-            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: _submitSurveyButton(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _submitSurveyButton() {
-    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
-        builder: (context, state) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: () {
-            context
-                .read<EmergencyWaitingBloc>()
-                .add(const SubmitAdditionalRequest());
-          },
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black, fixedSize: const Size(150, 55)),
-          child: state.loading == true
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  'Submit',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600),
-                ),
-        ),
-      );
-    });
-  }
-
-  Widget _emergencySurvey() {
-    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
-      builder: (context, state) {
-        if (state.questions == null) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state.questions!.isEmpty) {
-          return const Center(child: Text('No questions available'));
-        }
-
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: ListView.builder(
-            itemCount: state.questions!.length,
-            itemBuilder: (context, index) {
-              final question = state.questions![index];
-
-              if (question.containsKey("string")) {
-                final stringQuestions = question["string"] is List
-                    ? question["string"] as List<String>
-                    : question["string"]["questions"] as List<String>;
-                return _buildStringQuestions(stringQuestions, index);
-              }
-
-              if (question.containsKey("bool") ||
-                  question.containsKey("boolMore") ||
-                  question.containsKey("boolAdd") ||
-                  question.containsKey("boolOr")) {
-                String questionText = '';
-                if (question.containsKey("bool")) {
-                  questionText = question["bool"]["question"];
-                } else if (question.containsKey("boolMore")) {
-                  questionText = question["boolMore"]["question"];
-                } else if (question.containsKey("boolAdd")) {
-                  questionText = question["boolAdd"]["question"];
-                } else {
-                  questionText = question["boolOr"]["questions"][0];
-                }
-                return _buildBoolQuestion(questionText, index);
-              }
-
-              if (question.containsKey("num") ||
-                  question.containsKey("numAdd")) {
-                String questionText = question.containsKey("num")
-                    ? question["num"]["question"]
-                    : question["numAdd"]["question"];
-                return _buildNumQuestion(questionText, index);
-              }
-
-              return const SizedBox.shrink();
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStringQuestions(List<String> questions, int index) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: questions.map((question) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              question,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              onChanged: (value) {
-                context.read<EmergencyWaitingBloc>().add(
-                      UpdateAnswer(index: index, answer: value),
-                    );
-              },
-              decoration: InputDecoration(
-                fillColor: Colors.white,
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(50),
-                  borderSide: const BorderSide(color: Colors.black, width: 2),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(50),
-                  borderSide: const BorderSide(color: Colors.black, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(50),
-                  borderSide: const BorderSide(color: Colors.black, width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      }).toList(),
-    );
+  Widget _buildQuestionItem(Map<String, dynamic> question, int index) {
+    if (question.containsKey('boolMore')) {
+      return _buildBoolMoreQuestion(question['boolMore'], index);
+    } else if (question.containsKey('string')) {
+      return _buildStringQuestions(question['string']['questions'], index);
+    } else if (question.containsKey('bool') ||
+        question.containsKey('boolAdd')) {
+      String questionText = question.containsKey('bool')
+          ? question['bool']['question']
+          : question['boolAdd']['question'];
+      return _buildBoolQuestion(questionText, index);
+    } else if (question.containsKey('boolOr')) {
+      return _buildBoolOrQuestions(question['boolOr']['questions'], index);
+    } else if (question.containsKey('num') || question.containsKey('numAdd')) {
+      String questionText = question.containsKey('num')
+          ? question['num']['question']
+          : question['numAdd']['question'];
+      return _buildNumQuestion(questionText, index);
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildBoolQuestion(String question, int index) {
@@ -642,22 +574,353 @@ class _EmergencyDetailsState extends State<_EmergencyDetails> {
                 _buildBooleanChoice(
                   text: 'Yes',
                   isSelected: answer == true,
-                  onTap: () => context.read<EmergencyWaitingBloc>().add(
-                        UpdateAnswer(index: index, answer: true),
-                      ),
+                  onTap: () {
+                    context.read<EmergencyWaitingBloc>().add(
+                          UpdateAnswer(index: index, answer: true),
+                        );
+                  },
                 ),
                 const SizedBox(width: 16),
                 _buildBooleanChoice(
                   text: 'No',
                   isSelected: answer == false,
-                  onTap: () => context.read<EmergencyWaitingBloc>().add(
-                        UpdateAnswer(index: index, answer: false),
-                      ),
+                  onTap: () {
+                    context.read<EmergencyWaitingBloc>().add(
+                          UpdateAnswer(index: index, answer: false),
+                        );
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 8),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBoolOrQuestions(List<String> questions, int index) {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        final answers = Map<int, bool>.from(state.answers[index] ?? {});
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: questions.asMap().entries.map((entry) {
+            final questionIndex = entry.key;
+            final question = entry.value;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  question,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildBooleanChoice(
+                      text: 'Yes',
+                      isSelected: answers[questionIndex] == true,
+                      onTap: () {
+                        final updatedAnswers = Map<int, bool>.from(answers);
+                        updatedAnswers[questionIndex] = true;
+                        context.read<EmergencyWaitingBloc>().add(
+                              UpdateAnswer(
+                                  index: index, answer: updatedAnswers),
+                            );
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    _buildBooleanChoice(
+                      text: 'No',
+                      isSelected: answers[questionIndex] == false,
+                      onTap: () {
+                        final updatedAnswers = Map<int, bool>.from(answers);
+                        updatedAnswers[questionIndex] = false;
+                        context.read<EmergencyWaitingBloc>().add(
+                              UpdateAnswer(
+                                  index: index, answer: updatedAnswers),
+                            );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuestions() {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        if (state.questions == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(
+            state.questions!.length,
+            (index) => Padding(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              child: _buildQuestionItem(state.questions![index], index),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBoolMoreQuestion(Map<String, dynamic> boolMore, int index) {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        final currentAnswer = state.answers[index] as Map<String, dynamic>?;
+        final bool? mainAnswer = currentAnswer?['mainAnswer'] as bool?;
+        final subAnswers =
+            (currentAnswer?['subAnswers'] as Map<dynamic, dynamic>?)
+                    ?.cast<String, String>() ??
+                {};
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              boolMore['question'],
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildBooleanChoice(
+                  text: 'Yes',
+                  isSelected: mainAnswer == true,
+                  onTap: () {
+                    context.read<EmergencyWaitingBloc>().add(
+                          UpdateAnswer(
+                            index: index,
+                            answer: {
+                              'mainAnswer': true,
+                              'subAnswers': subAnswers,
+                            },
+                          ),
+                        );
+                  },
+                ),
+                const SizedBox(width: 16),
+                _buildBooleanChoice(
+                  text: 'No',
+                  isSelected: mainAnswer == false,
+                  onTap: () {
+                    context.read<EmergencyWaitingBloc>().add(
+                          UpdateAnswer(
+                            index: index,
+                            answer: {
+                              'mainAnswer': false,
+                              'subAnswers': {},
+                            },
+                          ),
+                        );
+                  },
+                ),
+              ],
+            ),
+            if (mainAnswer == true) ...[
+              const SizedBox(height: 16),
+              ...boolMore['subQuestions'].map<Widget>((subQ) {
+                if (subQ.containsKey('string')) {
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...(subQ['string']['questions'] as List<String>)
+                            .asMap()
+                            .entries
+                            .map((entry) {
+                          final questionIndex = entry.key.toString();
+                          final controllerKey =
+                              'boolMore_${index}_$questionIndex';
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                entry.value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _getController(
+                                  controllerKey,
+                                  subAnswers[questionIndex] ?? '',
+                                ),
+                                onChanged: (value) {
+                                  final newSubAnswers =
+                                      Map<String, String>.from(subAnswers);
+                                  newSubAnswers[questionIndex] = value;
+                                  context.read<EmergencyWaitingBloc>().add(
+                                        UpdateAnswer(
+                                          index: index,
+                                          answer: {
+                                            'mainAnswer': true,
+                                            'subAnswers': newSubAnswers,
+                                          },
+                                        ),
+                                      );
+                                },
+                                decoration: InputDecoration(
+                                  fillColor: Colors.white,
+                                  filled: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                    borderSide: const BorderSide(
+                                        color: Colors.black, width: 2),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                    borderSide: const BorderSide(
+                                        color: Colors.black, width: 2),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(50),
+                                    borderSide: const BorderSide(
+                                        color: Colors.black, width: 2),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }).toList(),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildNumQuestion(String question, int index) {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        final controllerKey = 'num_$index';
+        final answer = state.answers[index];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              question,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _getController(
+                controllerKey,
+                answer?.toString() ?? '',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                final numValue = int.tryParse(value);
+                if (numValue != null) {
+                  context.read<EmergencyWaitingBloc>().add(
+                        UpdateAnswer(index: index, answer: numValue),
+                      );
+                }
+              },
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(50),
+                  borderSide: const BorderSide(color: Colors.black, width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(50),
+                  borderSide: const BorderSide(color: Colors.black, width: 2),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(50),
+                  borderSide: const BorderSide(color: Colors.black, width: 2),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStringQuestions(List<String> questions, int index) {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        final answers = Map<int, String>.from(state.answers[index] ?? {});
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: questions.asMap().entries.map((entry) {
+            final questionIndex = entry.key;
+            final controllerKey = 'string_${index}_$questionIndex';
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.value,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _getController(
+                    controllerKey,
+                    answers[questionIndex] ?? '',
+                  ),
+                  onChanged: (value) {
+                    final updatedAnswers = Map<int, String>.from(answers);
+                    updatedAnswers[questionIndex] = value;
+                    context.read<EmergencyWaitingBloc>().add(
+                          UpdateAnswer(index: index, answer: updatedAnswers),
+                        );
+                  },
+                  decoration: InputDecoration(
+                    fillColor: Colors.white,
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide:
+                          const BorderSide(color: Colors.black, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide:
+                          const BorderSide(color: Colors.black, width: 2),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide:
+                          const BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            );
+          }).toList(),
         );
       },
     );
@@ -688,43 +951,34 @@ class _EmergencyDetailsState extends State<_EmergencyDetails> {
     );
   }
 
-  Widget _buildNumQuestion(String question, int index) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          question,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          keyboardType: TextInputType.number,
-          onChanged: (value) {
-            final numValue = int.tryParse(value);
-            if (numValue != null) {
-              context.read<EmergencyWaitingBloc>().add(
-                    UpdateAnswer(index: index, answer: numValue),
-                  );
-            }
-          },
-          decoration: InputDecoration(
-            fillColor: Colors.white,
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(50),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
+  Widget _submitSurveyButton() {
+    return BlocBuilder<EmergencyWaitingBloc, EmergencyWaitingState>(
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {
+              context
+                  .read<EmergencyWaitingBloc>()
+                  .add(const SubmitAdditionalRequest());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              fixedSize: const Size(150, 55),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(50),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(50),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
-            ),
+            child: state.loading == true
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Text(
+                    'Submit',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

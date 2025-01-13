@@ -99,21 +99,25 @@ Map<String, Map<String, dynamic>> emergencyQuestions = {
           "question": "Is this emergency for someone else?",
           "subQuestions": [
             {
-              "string": [
-                "What is the patient's age and gender? (If this emergency is not for you)",
-                "Does the patient have any known medical conditions? (If this emergency is not for you)",
-                "Is the patient conscious and breathing?"
-              ]
-            }
+              "string": {
+                "questions": [
+                  "What is the patient's age and gender? (If this emergency is not for you)",
+                  "Does the patient have any known medical conditions? (If this emergency is not for you)",
+                  "Is the patient conscious and breathing?"
+                ]
+              }
+            },
           ]
         }
       },
       {
-        "string": [
-          "What symptoms are you/they experiencing (e.g., chest pain, difficulty breathing, severe bleeding)?",
-          "Is your/their condition worsening?"
-        ]
-      }
+        "string": {
+          "questions": [
+            "What symptoms are you/they experiencing (e.g., chest pain, difficulty breathing, severe bleeding)?",
+            "Is your/their condition worsening?"
+          ]
+        }
+      },
     ]
   },
   "carCrash": {

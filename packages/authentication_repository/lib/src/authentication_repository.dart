@@ -143,7 +143,8 @@ class AuthenticationRepository {
     _authenticationUserController.add(userAndCivilianId);
   }
 
-  Stream<List<Map<String, dynamic>>> streamEspLocations(List<String> espIds, String caseId) {
+  Stream<List<Map<String, dynamic>>> streamEspLocations(
+      List<String> espIds, String caseId) {
     if (espIds.isEmpty) {
       return Stream.value([]);
     }
@@ -154,7 +155,6 @@ class AuthenticationRepository {
           .where(FieldPath.documentId, whereIn: espIds)
           .snapshots()
           .map((snapshot) {
-
         return snapshot.docs.map((doc) {
           final data = doc.data();
 
@@ -171,15 +171,17 @@ class AuthenticationRepository {
           .doc(caseId)
           .snapshots()
           .map((doc) {
-        final arrivalTimeList = List<Map<String, dynamic>>.from(doc.data()?['ESPsArrivalTime'] ?? []);
-        final arrivedEspIds = arrivalTimeList.map((map) => map['ESPID'] as String).toList();
+        final arrivalTimeList = List<Map<String, dynamic>>.from(
+            doc.data()?['ESPsArrivalTime'] ?? []);
+        final arrivedEspIds =
+            arrivalTimeList.map((map) => map['ESPID'] as String).toList();
         return arrivedEspIds;
       });
 
       return CombineLatestStream.combine2(
         espStream,
         caseStream,
-            (List<Map<String, dynamic>> esps, List<String> arrivedEspIds) {
+        (List<Map<String, dynamic>> esps, List<String> arrivedEspIds) {
           final result = esps.map((esp) {
             final arrived = arrivedEspIds.contains(esp['id']);
 
@@ -204,10 +206,8 @@ class AuthenticationRepository {
 
   Future<Map<String, dynamic>?> getEspDetails(String espId) async {
     try {
-      final espDoc = await FirebaseFirestore.instance
-          .collection('esps')
-          .doc(espId)
-          .get();
+      final espDoc =
+          await FirebaseFirestore.instance.collection('esps').doc(espId).get();
 
       if (!espDoc.exists) return null;
 
@@ -230,7 +230,8 @@ class AuthenticationRepository {
           .doc(caseId)
           .get();
 
-      final arrivedEsps = List<String>.from(caseDoc.data()?['ESPsArrivalTime'] ?? []);
+      final arrivedEsps =
+          List<String>.from(caseDoc.data()?['ESPsArrivalTime'] ?? []);
       return arrivedEsps.contains(espId);
     } catch (e) {
       print('Error checking ESP arrival: $e');
@@ -238,13 +239,14 @@ class AuthenticationRepository {
     }
   }
 
-  Future<List<String>> requestAdditionalEmergency(
-      {required questions,
-      required answers,
-      required latitude,
-      required longitude}) async {
-    CollectionReference requests =
-        FirebaseFirestore.instance.collection('requests');
+  // In authentication_repository.dart
+
+  Future<List<String>> requestAdditionalEmergency({
+    required questions,
+    required answers,
+    required latitude,
+    required longitude}) async {
+    CollectionReference requests = FirebaseFirestore.instance.collection('requests');
     CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
     CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
@@ -252,7 +254,7 @@ class AuthenticationRepository {
 
     Map<String, int> dispatch = {};
 
-    // Process each question to determine dispatch
+    // Process dispatch logic
     questions!.asMap().forEach((index, question) {
       if (!answers.containsKey(index)) return;
 
@@ -264,8 +266,9 @@ class AuthenticationRepository {
           });
         }
       } else if (question.containsKey('boolOr')) {
-        bool answer = answers[index];
-        if (answer) {
+        Map<int, bool> answersMap = answers[index];
+        bool hasPositiveAnswer = answersMap.values.any((value) => value == true);
+        if (hasPositiveAnswer && question['boolOr'].containsKey('dispatch')) {
           question['boolOr']['dispatch'].forEach((unit, count) {
             dispatch[unit] = (dispatch[unit] ?? 0) + (count as int);
           });
@@ -275,54 +278,101 @@ class AuthenticationRepository {
         int perPerson = question['numAdd']['perPerson'];
         int minimumPeople = question['numAdd']['minimumPeople'];
 
-        // Subtract minimum people to account for initial dispatch
         int additionalPeople = numberOfPeople - minimumPeople;
         if (additionalPeople > 0) {
           int requiredUnits = (additionalPeople / perPerson).ceil();
           question['numAdd']['dispatch'].forEach((unit, count) {
-            dispatch[unit] =
-                (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
+            dispatch[unit] = (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
           });
         }
       }
     });
 
-    final questionsAndAnswers = questions!
+    // Process questions and answers for submission
+    final questionsAndAnswers = (questions as List<dynamic>)
         .asMap()
         .entries
-        .map((entry) {
-          String questionText = '';
-          if (entry.value.containsKey('string')) {
-            questionText = entry.value['string'] is List
-                ? entry.value['string'][0]
-                : entry.value['string']['questions'][0];
-          } else if (entry.value.containsKey('bool')) {
-            questionText = entry.value['bool']['question'];
-          } else if (entry.value.containsKey('boolMore')) {
-            questionText = entry.value['boolMore']['question'];
-          } else if (entry.value.containsKey('boolAdd')) {
-            questionText = entry.value['boolAdd']['question'];
-          } else if (entry.value.containsKey('boolOr')) {
-            questionText = entry.value['boolOr']['questions'][0];
-          } else if (entry.value.containsKey('num')) {
-            questionText = entry.value['num']['question'];
-          } else if (entry.value.containsKey('numAdd')) {
-            questionText = entry.value['numAdd']['question'];
-          }
+        .expand<Map<String, String>>((entry) {
+      final index = entry.key;
+      final question = entry.value;
+      final answerValue = answers[index];
 
-          dynamic answer = answers[entry.key];
-          if (answer is bool) {
-            answer = answer ? 'Yes' : 'No';
-          }
+      if (answerValue == null) return const <Map<String, String>>[];
 
-          return {
+      if (question.containsKey('boolMore')) {
+        final mainQuestion = question['boolMore']['question'] as String;
+        final mainAnswer = (answerValue as Map<String, dynamic>)['mainAnswer'] as bool;
+        final subAnswers = (answerValue['subAnswers'] as Map<String, dynamic>?) ?? {};
+
+        final result = <Map<String, String>>[
+          {
+            'Question': mainQuestion,
+            'Answer': mainAnswer ? 'Yes' : 'No',
+          }
+        ];
+
+        if (mainAnswer && question['boolMore']['subQuestions'] != null) {
+          for (var subQ in question['boolMore']['subQuestions']) {
+            if (subQ.containsKey('string')) {
+              final subQuestions = subQ['string']['questions'] as List<String>;
+              for (var i = 0; i < subQuestions.length; i++) {
+                result.add({
+                  'Question': subQuestions[i],
+                  'Answer': subAnswers[i.toString()] ?? '',
+                });
+              }
+            }
+          }
+        }
+
+        return result;
+      } else if (question.containsKey('string')) {
+        final questions = question['string']['questions'] as List<String>;
+        if (answerValue is Map) {
+          return questions.asMap().entries.map((qEntry) {
+            return {
+              'Question': qEntry.value,
+              'Answer': (answerValue[qEntry.key] ?? '').toString(),
+            };
+          });
+        }
+      } else if (question.containsKey('boolOr')) {
+        final questions = question['boolOr']['questions'] as List<String>;
+        if (answerValue is Map<int, bool>) {
+          return questions.asMap().entries.map((qEntry) {
+            final answer = answerValue[qEntry.key];
+            return {
+              'Question': qEntry.value,
+              'Answer': answer != null ? (answer ? 'Yes' : 'No') : '',
+            };
+          });
+        }
+      } else if (question.containsKey('bool') ||
+          question.containsKey('boolAdd')) {
+        final questionText = question.containsKey('bool')
+            ? question['bool']['question']
+            : question['boolAdd']['question'];
+        if (answerValue is bool) {
+          return [{
             'Question': questionText,
-            'Answer': answers.containsKey(entry.key) ? answer : null,
-          };
-        })
-        .where((qa) => qa['Answer'] != null)
-        .toList();
+            'Answer': answerValue ? 'Yes' : 'No',
+          }];
+        }
+      } else if (question.containsKey('num') ||
+          question.containsKey('numAdd')) {
+        final questionText = question.containsKey('num')
+            ? question['num']['question']
+            : question['numAdd']['question'];
+        return [{
+          'Question': questionText,
+          'Answer': answerValue.toString(),
+        }];
+      }
 
+      return const <Map<String, String>>[];
+    }).where((qa) => qa['Answer']!.isNotEmpty).toList();
+
+    // Continue with the rest of the submission process
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('requests')
         .where('CivilianID', isEqualTo: civilianId)
@@ -363,7 +413,8 @@ class AuthenticationRepository {
         FirebaseFirestore.instance.collection('requests');
     CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
     String requestId = requests.doc().id;
     String caseId = cases.doc().id;
     final civilianId = await getCivilianId();
@@ -458,16 +509,16 @@ class AuthenticationRepository {
   }
 
   Future<String> getEmergencyWaitingStatus() async {
-    try{
+    try {
       String civilianId = await getCivilianId() ?? "";
       CollectionReference civilians =
-      FirebaseFirestore.instance.collection('civilians');
+          FirebaseFirestore.instance.collection('civilians');
 
       final civilianDoc = await civilians.doc(civilianId).get();
       String emergencyWaitingStatus = civilianDoc["InEmergency"];
 
       return emergencyWaitingStatus;
-    } catch(e) {
+    } catch (e) {
       print(e);
     }
     return "";
@@ -502,7 +553,8 @@ class AuthenticationRepository {
 
   Future<Map<String, dynamic>> getCivilianData() async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     final civilianDoc = await civilians.doc(id).get();
     final civilianData = civilianDoc.data();
@@ -523,42 +575,48 @@ class AuthenticationRepository {
 
   Future<void> updateGender(String gender) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"Gender": gender});
   }
 
   Future<void> updateBloodType(String bloodType) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"BloodType": bloodType});
   }
 
   Future<void> updateDOB(String dob) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"DOB": dob});
   }
 
   Future<void> updateConditions(List<dynamic> conditions) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"Conditions": conditions});
   }
 
   Future<void> updateAllergies(List<dynamic> allergies) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"Allergies": allergies});
   }
 
   Future<void> updateMedications(List<dynamic> medications) async {
     String id = await getCivilianId() ?? "";
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
 
     await civilians.doc(id).update({"Medications": medications});
   }
