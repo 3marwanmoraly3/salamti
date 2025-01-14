@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:salamti/home/home.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:salamti/emergencyContacts/emergencyContacts.dart';
 import 'package:salamti/profile/profile.dart';
 import 'package:salamti/requestEmergency/requestEmergency.dart';
@@ -14,25 +17,29 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.only(left: 20, top: 60, right: 20),
-        child: Column(
-          children: [
-            _TopNavBar(),
-            const SizedBox(height: 40),
-            _RequestEmergency(),
-            const SizedBox(height: 40),
-            const Row(
-              children: [
-                Text(
-                  "Emergency Resources",
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _EmergencyResources(),
-          ],
+      body: BlocProvider<HomeBloc>(
+        create: (_) => HomeBloc(
+            authenticationRepository: context.read<AuthenticationRepository>()),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20, top: 60, right: 20),
+          child: Column(
+            children: [
+              _TopNavBar(),
+              const SizedBox(height: 40),
+              _RequestEmergency(),
+              const SizedBox(height: 40),
+              const Row(
+                children: [
+                  Text(
+                    "Emergency Resources",
+                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _EmergencyResources(),
+            ],
+          ),
         ),
       ),
     );
@@ -252,19 +259,60 @@ class _RequestEmergency extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
             ),
           ),
-          const Column(
-            children: [
-              ListTile(
-                title: Text(
-                  "Add Location",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-                ),
-                leading: Icon(Icons.add_circle),
-              ),
-            ],
-          ),
+          _savedLocations(),
         ],
       ),
+    );
+  }
+
+  Widget _savedLocations() {
+    return BlocBuilder<HomeBloc, HomeState>(
+      buildWhen: (previous, current) => previous.loading != current.loading,
+      builder: (context, state) {
+        return Container(
+          child: (state.loading)
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    ...List.generate(
+                      state.savedLocations.length,
+                      (index) => GestureDetector(
+                        onTap: () {},
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: ListTile(
+                                title: Text(
+                                  state.savedLocations[index]["Name"],
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                leading: const Icon(Icons.star_rounded),
+                              ),
+                            ),
+                            if (index < state.savedLocations.length - 1)
+                              const Divider(thickness: 1, color: Colors.black26)
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {},
+                      child: const ListTile(
+                        title: Text(
+                          "Add Location",
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.w500),
+                        ),
+                        leading: Icon(Icons.add_circle),
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 }
@@ -276,8 +324,7 @@ class _EmergencyResources extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         GestureDetector(
-          onTap: () => Navigator.of(context).push(
-              EmergencyGuides.route()),
+          onTap: () => Navigator.of(context).push(EmergencyGuides.route()),
           child: Container(
             height: 115,
             width: 165,
@@ -306,8 +353,7 @@ class _EmergencyResources extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.of(context).push(
-              ImportantHotlines.route()),
+          onTap: () => Navigator.of(context).push(ImportantHotlines.route()),
           child: Container(
             height: 115,
             width: 165,

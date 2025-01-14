@@ -613,6 +613,17 @@ class AuthenticationRepository {
     return querySnapshot.docs as List<dynamic>;
   }
 
+  Future<List<dynamic>> getSavedLocations() async {
+    String id = await getCivilianId() ?? "";
+    CollectionReference civilians =
+    FirebaseFirestore.instance.collection('civilians');
+
+    final civilianDoc = await civilians.doc(id).get();
+    final savedLocations = civilianDoc.get("SavedLocations");
+
+    return savedLocations;
+  }
+
   Future<void> updateGender(String gender) async {
     String id = await getCivilianId() ?? "";
     CollectionReference civilians =
