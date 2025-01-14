@@ -37,13 +37,11 @@ class EspLocationBloc extends Bloc<EspLocationEvent, EspLocationState> {
         caseId: event.caseId,
       ));
 
-      // Cancel existing subscription if any
       if (_locationSubscription != null) {
         await _locationSubscription!.cancel();
         _locationSubscription = null;
       }
 
-      // Now set up the stream
       _locationSubscription = authenticationRepository
           .streamEspLocations(event.espIds, event.caseId)
           .listen(
@@ -75,7 +73,6 @@ class EspLocationBloc extends Bloc<EspLocationEvent, EspLocationState> {
                   final estimatedTime = googleMapsRepository.calculateArrivalTime(route);
                   estimatedTimes[espId] = estimatedTime;
                 } catch (routeError) {
-                  // Don't add a route for this ESP if we couldn't get one
                   continue;
                 }
               }

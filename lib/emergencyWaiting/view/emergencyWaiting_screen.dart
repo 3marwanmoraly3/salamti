@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:salamti/emergencyWaiting/emergencyWaiting.dart';
+import 'package:salamti/emergencyGuides/emergencyGuides.dart';
 import 'package:salamti/espLocation/espLocation.dart';
 import 'package:salamti/app/app.dart';
 
@@ -53,7 +54,6 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
   void initState() {
     super.initState();
     _loadMarkerIcons();
-    // Check if we need to start tracking immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = context.read<EmergencyWaitingBloc>().state;
 
@@ -148,19 +148,16 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
       final hasArrived = espState.arrivedStatus[espId] ?? false;
       final espType = espState.espTypes[espId]?.toLowerCase() ?? 'default';
 
-      // Calculate rotation based on actual movement
       double rotation = 0;
       if (!hasArrived && previousLocations.containsKey(espId)) {
         final prevLocation = previousLocations[espId]!;
         if (prevLocation != currentLocation) {
-          // Add 180 degrees to flip the direction
           rotation =
               (_calculateBearing(prevLocation, currentLocation) + 180) % 360;
           print('ESP $espId rotation: $rotation degrees');
         }
       }
 
-      // Store current location for next update
       previousLocations[espId] = currentLocation;
 
       try {
@@ -179,7 +176,6 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
       }
     });
 
-    // Add destination marker
     if (espState.destination != null) {
       markers.add(
         Marker(
@@ -206,7 +202,6 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
         sin(startLat) * cos(endLat) * cos(endLng - startLng);
     final bearing = atan2(y, x);
 
-    // Convert to degrees
     return (bearing * 180 / pi + 360) % 360;
   }
 
@@ -428,32 +423,35 @@ class _EmergencyWaitingState extends State<_EmergencyWaiting> {
   }
 
   Widget _emergencyGuidesButton() {
-    return Container(
-      width: 400,
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        color: Color(0x82d9d9d9),
-        borderRadius: BorderRadius.all(
-          Radius.circular(15),
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(EmergencyGuides.route()),
+      child: Container(
+        width: 400,
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: const BoxDecoration(
+          color: Color(0x82d9d9d9),
+          borderRadius: BorderRadius.all(
+            Radius.circular(15),
+          ),
         ),
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Emergency Guides",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Emergency Guides",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-          Image(
-            image: AssetImage("assets/emergencyWaiting/images/cpr.png"),
-            width: 30,
-          ),
-        ],
+            Image(
+              image: AssetImage("assets/emergencyWaiting/images/cpr.png"),
+              width: 30,
+            ),
+          ],
+        ),
       ),
     );
   }
