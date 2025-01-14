@@ -7,3 +7,4 @@ export 'src/confirmedPassword.dart';
 export 'src/name.dart';
 export 'src/smsCode.dart';
 export 'src/medicalInfo.dart';
+export 'src/locationName.dart';

@@ -23,6 +23,13 @@ class RetrievingInformationFailure implements Exception {
   }
 }
 
+class SaveLocationFailure implements Exception {
+  @override
+  String toString() {
+    return "Failed to save location.";
+  }
+}
+
 class LoginFailure implements Exception {
   @override
   String toString() {
@@ -1034,6 +1041,34 @@ class AuthenticationRepository {
     } catch (e) {
       print(e.toString());
       throw CheckPasswordFailure();
+    }
+  }
+
+  Future<void> saveLocation({
+    required String name,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      String civilianId = await getCivilianId() ?? "";
+      CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+
+      final civilianDoc = await civilians.doc(civilianId).get();
+      List<dynamic> savedLocations = List.from(civilianDoc.get("SavedLocations") ?? []);
+
+      if (savedLocations.any((location) => location["Name"] == name)) {
+        throw SaveLocationFailure();
+      }
+
+      savedLocations.add({
+        "Name": name,
+        "Location": GeoPoint(latitude, longitude),
+      });
+
+      await civilians.doc(civilianId).update({"SavedLocations": savedLocations});
+    } catch (e) {
+      print(e.toString());
+      throw SaveLocationFailure();
     }
   }
 

@@ -12,6 +12,7 @@ class HomeBloc
       : _authenticationRepository = authenticationRepository,
         super(const HomeState(savedLocations: [])) {
     on<InitialCheck>(_onInitialCheck);
+    on<RefreshSavedLocations>(_onRefreshSavedLocations);
     add(const InitialCheck());
   }
 
@@ -21,6 +22,12 @@ class HomeBloc
       Emitter<HomeState> emit) async {
     List<dynamic> savedLocations =
         await _authenticationRepository.getSavedLocations();
+    emit(state.copyWith(savedLocations: savedLocations, loading: false));
+  }
+
+  void _onRefreshSavedLocations(RefreshSavedLocations event, Emitter<HomeState> emit) async {
+    emit(state.copyWith(loading: true, savedLocations: state.savedLocations));
+    List<dynamic> savedLocations = await _authenticationRepository.getSavedLocations();
     emit(state.copyWith(savedLocations: savedLocations, loading: false));
   }
 }

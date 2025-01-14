@@ -5,12 +5,22 @@ import 'package:google_maps_repository/google_maps_repository.dart';
 import 'package:authentication_repository/authentication_repository.dart';
 
 class RequestEmergencyPage extends StatelessWidget {
-  RequestEmergencyPage({super.key});
+  const RequestEmergencyPage({
+    super.key,
+    this.initialLongitude,
+    this.initialLatitude,
+  });
 
-  final googleMapsRepository = GoogleMapsRepository();
+  final double? initialLongitude;
+  final double? initialLatitude;
 
-  static Route<void> route() {
-    return MaterialPageRoute<void>(builder: (_) => RequestEmergencyPage());
+  static Route<void> route({double? longitude, double? latitude}) {
+    return MaterialPageRoute<void>(
+      builder: (_) => RequestEmergencyPage(
+        initialLongitude: longitude,
+        initialLatitude: latitude,
+      ),
+    );
   }
 
   @override
@@ -18,9 +28,20 @@ class RequestEmergencyPage extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: BlocProvider<RequestEmergencyBloc>(
-        create: (_) => RequestEmergencyBloc(
-            googleMapsRepository: googleMapsRepository,
-            authenticationRepository: context.read<AuthenticationRepository>()),
+        create: (_) {
+          final bloc = RequestEmergencyBloc(
+            googleMapsRepository: GoogleMapsRepository(),
+            authenticationRepository: context.read<AuthenticationRepository>(),
+          );
+
+          if (initialLatitude != null && initialLongitude != null) {
+            bloc
+              ..add(CoordinatesChanged(initialLongitude!, initialLatitude!))
+              ..add(const StatusChanged(RequestEmergencyStatus.emergencyType));
+          }
+
+          return bloc;
+        },
         child: const RequestEmergencyScreen(),
       ),
     );

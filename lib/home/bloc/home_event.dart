@@ -7,3 +7,7 @@ sealed class HomeEvent {
 final class InitialCheck extends HomeEvent {
   const InitialCheck();
 }
+
+final class RefreshSavedLocations extends HomeEvent {
+  const RefreshSavedLocations();
+}

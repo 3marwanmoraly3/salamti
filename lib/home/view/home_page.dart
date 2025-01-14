@@ -8,6 +8,7 @@ import 'package:salamti/requestEmergency/requestEmergency.dart';
 import 'package:salamti/pastActivities/pastActivities.dart';
 import 'package:salamti/emergencyGuides/emergencyGuides.dart';
 import 'package:salamti/importantHotlines/importantHotlines.dart';
+import 'package:salamti/saveLocation/saveLocation.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -239,7 +240,7 @@ class _RequestEmergency extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 185,
+      height: 195,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
         color: const Color(0x82d9d9d9),
@@ -269,47 +270,64 @@ class _RequestEmergency extends StatelessWidget {
     return BlocBuilder<HomeBloc, HomeState>(
       buildWhen: (previous, current) => previous.loading != current.loading,
       builder: (context, state) {
-        return Container(
-          child: (state.loading)
+        return Expanded(
+          child: state.loading
               ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  children: [
-                    ...List.generate(
-                      state.savedLocations.length,
-                      (index) => GestureDetector(
-                        onTap: () {},
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: ListTile(
+              : SingleChildScrollView(
+
+                  child: Column(
+                    children: [
+                      ...List.generate(
+                        state.savedLocations.length,
+                        (index) => GestureDetector(
+                          onTap: () {
+                            final location = state.savedLocations[index]["Location"];
+                            Navigator.of(context).push<void>(
+                              RequestEmergencyPage.route(
+                                longitude: location.longitude,
+                                latitude: location.latitude,
+                              ),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              ListTile(
                                 title: Text(
                                   state.savedLocations[index]["Name"],
                                   style: const TextStyle(
-                                      fontSize: 20,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.w500),
                                 ),
                                 leading: const Icon(Icons.star_rounded),
                               ),
-                            ),
-                            if (index < state.savedLocations.length - 1)
-                              const Divider(thickness: 1, color: Colors.black26)
-                          ],
+                              if (index < state.savedLocations.length)
+                                const Divider(
+                                    thickness: 1, color: Colors.black26)
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () {},
-                      child: const ListTile(
-                        title: Text(
-                          "Add Location",
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w500),
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.of(context)
+                              .push(SaveLocationPage.route());
+                          if (context.mounted) {
+                            context
+                                .read<HomeBloc>()
+                                .add(const RefreshSavedLocations());
+                          }
+                        },
+                        child: const ListTile(
+                          title: Text(
+                            "Add Location",
+                            style: TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.w500),
+                          ),
+                          leading: Icon(Icons.add_circle),
                         ),
-                        leading: Icon(Icons.add_circle),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
         );
       },
