@@ -389,15 +389,24 @@ class _PickLocationState extends State<_PickLocation> {
         latitude: currentLocation.latitude);
   }
 
-  Future<void> _updateCurrentLocation(
-      {double? longitude, double? latitude}) async {
+  Future<void> _updateCurrentLocation({double? longitude, double? latitude}) async {
     if (longitude != null && latitude != null) {
-      LatLng currentPosition = LatLng(latitude - 0.000400, longitude);
-      CameraPosition newCameraPosition =
-      CameraPosition(target: currentPosition, zoom: 18);
-      GoogleMapController controller = await _googleMapsController.future;
-      await controller
-          .animateCamera(CameraUpdate.newCameraPosition(newCameraPosition));
+      try {
+        final GoogleMapController controller = await _googleMapsController.future;
+        if (controller.toString().contains('Destroyed')) {
+          return;
+        }
+
+        LatLng currentPosition = LatLng(latitude - 0.000400, longitude);
+        CameraPosition newCameraPosition = CameraPosition(
+          target: currentPosition,
+          zoom: 18,
+        );
+
+        await controller.animateCamera(CameraUpdate.newCameraPosition(newCameraPosition));
+      } catch (e) {
+        print('Map animation error: $e');
+      }
     }
   }
 }
