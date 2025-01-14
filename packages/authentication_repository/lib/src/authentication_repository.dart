@@ -16,6 +16,13 @@ class SendPhoneNumberFailure implements Exception {
   }
 }
 
+class RetrievingInformationFailure implements Exception {
+  @override
+  String toString() {
+    return "Failed to retrieve information.";
+  }
+}
+
 class LoginFailure implements Exception {
   @override
   String toString() {
@@ -30,10 +37,24 @@ class LogOutFailure implements Exception {
   }
 }
 
+class ChangePhoneNumberFailure implements Exception {
+  @override
+  String toString() {
+    return "Failed to change phone number.";
+  }
+}
+
 class ChangePasswordFailure implements Exception {
   @override
   String toString() {
     return "Failed to change password.";
+  }
+}
+
+class CheckPasswordFailure implements Exception {
+  @override
+  String toString() {
+    return "Unable to verify password.";
   }
 }
 
@@ -239,15 +260,17 @@ class AuthenticationRepository {
     }
   }
 
-  Future<List<String>> requestAdditionalEmergency({
-    required questions,
-    required answers,
-    required latitude,
-    required longitude}) async {
-    CollectionReference requests = FirebaseFirestore.instance.collection('requests');
+  Future<List<String>> requestAdditionalEmergency(
+      {required questions,
+      required answers,
+      required latitude,
+      required longitude}) async {
+    CollectionReference requests =
+        FirebaseFirestore.instance.collection('requests');
     CollectionReference cases = FirebaseFirestore.instance.collection('cases');
     CollectionReference esps = FirebaseFirestore.instance.collection('esps');
-    CollectionReference civilians = FirebaseFirestore.instance.collection('civilians');
+    CollectionReference civilians =
+        FirebaseFirestore.instance.collection('civilians');
     final civilianId = await getCivilianId();
 
     Map<String, int> dispatch = {};
@@ -265,7 +288,8 @@ class AuthenticationRepository {
         }
       } else if (question.containsKey('boolOr')) {
         Map<int, bool> answersMap = answers[index];
-        bool hasPositiveAnswer = answersMap.values.any((value) => value == true);
+        bool hasPositiveAnswer =
+            answersMap.values.any((value) => value == true);
         if (hasPositiveAnswer && question['boolOr'].containsKey('dispatch')) {
           question['boolOr']['dispatch'].forEach((unit, count) {
             dispatch[unit] = (dispatch[unit] ?? 0) + (count as int);
@@ -280,7 +304,8 @@ class AuthenticationRepository {
         if (additionalPeople > 0) {
           int requiredUnits = (additionalPeople / perPerson).ceil();
           question['numAdd']['dispatch'].forEach((unit, count) {
-            dispatch[unit] = (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
+            dispatch[unit] =
+                (dispatch[unit] ?? 0) + (requiredUnits * (count as int));
           });
         }
       }
@@ -291,84 +316,93 @@ class AuthenticationRepository {
         .asMap()
         .entries
         .expand<Map<String, String>>((entry) {
-      final index = entry.key;
-      final question = entry.value;
-      final answerValue = answers[index];
+          final index = entry.key;
+          final question = entry.value;
+          final answerValue = answers[index];
 
-      if (answerValue == null) return const <Map<String, String>>[];
+          if (answerValue == null) return const <Map<String, String>>[];
 
-      if (question.containsKey('boolMore')) {
-        final mainQuestion = question['boolMore']['question'] as String;
-        final mainAnswer = (answerValue as Map<String, dynamic>)['mainAnswer'] as bool;
-        final subAnswers = (answerValue['subAnswers'] as Map<String, dynamic>?) ?? {};
+          if (question.containsKey('boolMore')) {
+            final mainQuestion = question['boolMore']['question'] as String;
+            final mainAnswer =
+                (answerValue as Map<String, dynamic>)['mainAnswer'] as bool;
+            final subAnswers =
+                (answerValue['subAnswers'] as Map<String, dynamic>?) ?? {};
 
-        final result = <Map<String, String>>[
-          {
-            'Question': mainQuestion,
-            'Answer': mainAnswer ? 'Yes' : 'No',
-          }
-        ];
+            final result = <Map<String, String>>[
+              {
+                'Question': mainQuestion,
+                'Answer': mainAnswer ? 'Yes' : 'No',
+              }
+            ];
 
-        if (mainAnswer && question['boolMore']['subQuestions'] != null) {
-          for (var subQ in question['boolMore']['subQuestions']) {
-            if (subQ.containsKey('string')) {
-              final subQuestions = subQ['string']['questions'] as List<String>;
-              for (var i = 0; i < subQuestions.length; i++) {
-                result.add({
-                  'Question': subQuestions[i],
-                  'Answer': subAnswers[i.toString()] ?? '',
-                });
+            if (mainAnswer && question['boolMore']['subQuestions'] != null) {
+              for (var subQ in question['boolMore']['subQuestions']) {
+                if (subQ.containsKey('string')) {
+                  final subQuestions =
+                      subQ['string']['questions'] as List<String>;
+                  for (var i = 0; i < subQuestions.length; i++) {
+                    result.add({
+                      'Question': subQuestions[i],
+                      'Answer': subAnswers[i.toString()] ?? '',
+                    });
+                  }
+                }
               }
             }
+
+            return result;
+          } else if (question.containsKey('string')) {
+            final questions = question['string']['questions'] as List<String>;
+            if (answerValue is Map) {
+              return questions.asMap().entries.map((qEntry) {
+                return {
+                  'Question': qEntry.value,
+                  'Answer': (answerValue[qEntry.key] ?? '').toString(),
+                };
+              });
+            }
+          } else if (question.containsKey('boolOr')) {
+            final questions = question['boolOr']['questions'] as List<String>;
+            if (answerValue is Map<int, bool>) {
+              return questions.asMap().entries.map((qEntry) {
+                final answer = answerValue[qEntry.key];
+                return {
+                  'Question': qEntry.value,
+                  'Answer': answer != null ? (answer ? 'Yes' : 'No') : '',
+                };
+              });
+            }
+          } else if (question.containsKey('bool') ||
+              question.containsKey('boolAdd')) {
+            final questionText = question.containsKey('bool')
+                ? question['bool']['question']
+                : question['boolAdd']['question'];
+            if (answerValue is bool) {
+              return [
+                {
+                  'Question': questionText,
+                  'Answer': answerValue ? 'Yes' : 'No',
+                }
+              ];
+            }
+          } else if (question.containsKey('num') ||
+              question.containsKey('numAdd')) {
+            final questionText = question.containsKey('num')
+                ? question['num']['question']
+                : question['numAdd']['question'];
+            return [
+              {
+                'Question': questionText,
+                'Answer': answerValue.toString(),
+              }
+            ];
           }
-        }
 
-        return result;
-      } else if (question.containsKey('string')) {
-        final questions = question['string']['questions'] as List<String>;
-        if (answerValue is Map) {
-          return questions.asMap().entries.map((qEntry) {
-            return {
-              'Question': qEntry.value,
-              'Answer': (answerValue[qEntry.key] ?? '').toString(),
-            };
-          });
-        }
-      } else if (question.containsKey('boolOr')) {
-        final questions = question['boolOr']['questions'] as List<String>;
-        if (answerValue is Map<int, bool>) {
-          return questions.asMap().entries.map((qEntry) {
-            final answer = answerValue[qEntry.key];
-            return {
-              'Question': qEntry.value,
-              'Answer': answer != null ? (answer ? 'Yes' : 'No') : '',
-            };
-          });
-        }
-      } else if (question.containsKey('bool') ||
-          question.containsKey('boolAdd')) {
-        final questionText = question.containsKey('bool')
-            ? question['bool']['question']
-            : question['boolAdd']['question'];
-        if (answerValue is bool) {
-          return [{
-            'Question': questionText,
-            'Answer': answerValue ? 'Yes' : 'No',
-          }];
-        }
-      } else if (question.containsKey('num') ||
-          question.containsKey('numAdd')) {
-        final questionText = question.containsKey('num')
-            ? question['num']['question']
-            : question['numAdd']['question'];
-        return [{
-          'Question': questionText,
-          'Answer': answerValue.toString(),
-        }];
-      }
-
-      return const <Map<String, String>>[];
-    }).where((qa) => qa['Answer']!.isNotEmpty).toList();
+          return const <Map<String, String>>[];
+        })
+        .where((qa) => qa['Answer']!.isNotEmpty)
+        .toList();
 
     // Continue with the rest of the submission process
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
@@ -450,10 +484,11 @@ class AuthenticationRepository {
     final civilianDoc = await civilians.doc(civilianId).get();
     final emergencyContacts = civilianDoc.get("EmergencyContacts");
 
-    for(final contact in emergencyContacts) {
+    for (final contact in emergencyContacts) {
       String phone = "962${contact["Phone"]}";
       String name = civilianDoc.get("Name");
-      String link = "https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}";
+      String link =
+          "https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}";
       String type = formatEmergencyType(emergencyType);
       sendNotification(phone: phone, type: type, link: link, name: name);
     }
@@ -715,10 +750,7 @@ class AuthenticationRepository {
           .get();
 
       await checkEmergencyContactDoesNotExist(
-          querySnapshot: querySnapshot,
-          name: name,
-          phone: phone,
-          index: index);
+          querySnapshot: querySnapshot, name: name, phone: phone, index: index);
 
       DocumentReference docRef = querySnapshot.docs[0].reference;
       List<dynamic> contacts = querySnapshot.docs[0].get('EmergencyContacts');
@@ -838,9 +870,13 @@ class AuthenticationRepository {
     }
   }
 
-  Future<void> sendNotification({required String phone, required String name, required String type, required String link}) async {
+  Future<void> sendNotification(
+      {required String phone,
+      required String name,
+      required String type,
+      required String link}) async {
     final url =
-    Uri.parse('https://graph.facebook.com/v20.0/341497479053548/messages');
+        Uri.parse('https://graph.facebook.com/v20.0/341497479053548/messages');
 
     final headers = {
       'Authorization': 'Bearer $whatsappAPIKey',
@@ -859,7 +895,11 @@ class AuthenticationRepository {
             "type": "body",
             "parameters": [
               {"type": "text", "text": name, "parameter_name": "user_name"},
-              {"type": "text", "text": type, "parameter_name": "emergency_type"},
+              {
+                "type": "text",
+                "text": type,
+                "parameter_name": "emergency_type"
+              },
               {"type": "text", "text": link, "parameter_name": "location_link"},
             ]
           },
@@ -899,6 +939,50 @@ class AuthenticationRepository {
     }
   }
 
+  Future<String> getPhoneNumber() async {
+    try {
+      String id = await getUserId() ?? "";
+      CollectionReference users =
+          FirebaseFirestore.instance.collection('users');
+
+      final userDoc = await users.doc(id).get();
+      final username = userDoc.get("Username") as String;
+      return username;
+    } catch (e) {
+      print(e.toString());
+      throw RetrievingInformationFailure();
+    }
+  }
+
+  Future<void> changePhoneNumber({required String phone}) async {
+    try {
+      String id = await getUserId() ?? "";
+      CollectionReference users =
+          FirebaseFirestore.instance.collection('users');
+
+      await users.doc(id).update({"Username": phone});
+    } catch (e) {
+      print(e.toString());
+      throw ChangePhoneNumberFailure();
+    }
+  }
+
+  Future<void> changePhoneVerification(
+      {required String phone}) async {
+    try {
+      checkPhoneDoesNotExist(phone: phone);
+      await sendPhoneNumber(phone: phone);
+    } on PhoneExists catch (e) {
+      print(e.toString());
+      throw PhoneExists();
+    } on SendPhoneNumberFailure catch (e) {
+      print(e.toString());
+      throw SendPhoneNumberFailure();
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
   Future<void> changePassword(
       {required String phone, required String password}) async {
     try {
@@ -917,6 +1001,28 @@ class AuthenticationRepository {
     } catch (e) {
       print(e.toString());
       throw ChangePasswordFailure();
+    }
+  }
+
+  Future<void> checkPassword(
+      {required String password}) async {
+    try {
+      String id = await getUserId() ?? "";
+      CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
+
+      final userDoc = await users.doc(id).get();
+      final hashedPassword = userDoc.get("Password");
+
+      if(!DBCrypt().checkpw(password, hashedPassword)){
+        throw WrongCredentials();
+      }
+    } on WrongCredentials catch (e) {
+      print(e.toString());
+      throw WrongCredentials();
+    } catch (e) {
+      print(e.toString());
+      throw CheckPasswordFailure();
     }
   }
 
