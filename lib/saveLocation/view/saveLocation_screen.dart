@@ -478,41 +478,44 @@ class _NameLocation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text(
-          "Name Location",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
-        ),
-        centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_circle_left_rounded,
-            size: 60,
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, top: 30, right: 20),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text(
+            "Save Location",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
           ),
-          onPressed: () {
-            context
-                .read<SaveLocationBloc>()
-                .add(const StatusChanged(SaveLocationStatus.pickLocation));
-          },
-          padding: EdgeInsets.zero,
-        ),
-      ),
-      body: Align(
-        alignment: const Alignment(0, -1 / 3),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Enter Location Name",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          centerTitle: false,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_circle_left_rounded,
+              size: 60,
             ),
-            const SizedBox(height: 32),
-            _LocationNameInput(),
-            const SizedBox(height: 4),
-            _SaveLocationButton(),
-          ],
+            onPressed: () {
+              context
+                  .read<SaveLocationBloc>()
+                  .add(const StatusChanged(SaveLocationStatus.pickLocation));
+            },
+            padding: EdgeInsets.zero,
+          ),
+        ),
+        body: Align(
+          alignment: const Alignment(0, -1 / 3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Enter Location Name",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
+              _LocationNameInput(),
+              const SizedBox(height: 4),
+              _SaveLocationButton(),
+            ],
+          ),
         ),
       ),
     );

@@ -1072,6 +1072,27 @@ class AuthenticationRepository {
     }
   }
 
+  Future<void> deleteSavedLocation(String locationName) async {
+    try {
+      String civilianId = await getCivilianId() ?? "";
+      CollectionReference civilians = FirebaseFirestore.instance.collection(
+          'civilians');
+
+      final civilianDoc = await civilians.doc(civilianId).get();
+      List<dynamic> savedLocations = List.from(
+          civilianDoc.get("SavedLocations") ?? []);
+
+      savedLocations.removeWhere((location) =>
+      location["Name"] == locationName);
+
+      await civilians.doc(civilianId).update(
+          {"SavedLocations": savedLocations});
+    } catch (e) {
+      print(e.toString());
+      throw SaveLocationFailure();
+    }
+  }
+
   Future<void> signUpVerification({
     required String phone,
     required nationalId,

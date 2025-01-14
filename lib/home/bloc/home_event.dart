@@ -11,3 +11,8 @@ final class InitialCheck extends HomeEvent {
 final class RefreshSavedLocations extends HomeEvent {
   const RefreshSavedLocations();
 }
+
+final class DeleteSavedLocation extends HomeEvent {
+  const DeleteSavedLocation(this.locationName);
+  final String locationName;
+}

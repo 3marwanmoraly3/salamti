@@ -86,7 +86,7 @@ class ProfilePage extends StatelessWidget {
                     width: 30,
                   ),
                   title: const Text(
-                    "Medical Record",
+                    "Medical ID",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                   ),
                   tileColor: const Color(0x82d9d9d9),

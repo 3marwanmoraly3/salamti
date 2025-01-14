@@ -268,18 +268,40 @@ class _RequestEmergency extends StatelessWidget {
 
   Widget _savedLocations() {
     return BlocBuilder<HomeBloc, HomeState>(
-      buildWhen: (previous, current) => previous.loading != current.loading,
+      buildWhen: (previous, current) =>
+      previous.loading != current.loading ||
+          previous.savedLocations != current.savedLocations,
       builder: (context, state) {
         return Expanded(
           child: state.loading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
-
-                  child: Column(
+            child: Column(
+              children: [
+                ...List.generate(
+                  state.savedLocations.length,
+                      (index) => Column(
                     children: [
-                      ...List.generate(
-                        state.savedLocations.length,
-                        (index) => GestureDetector(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        child: ListTile(
+                          title: Text(
+                            state.savedLocations[index]["Name"],
+                            style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w500),
+                          ),
+                          leading: const Icon(Icons.star_rounded),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete_rounded,
+                            ),
+                            onPressed: () {
+                              context.read<HomeBloc>().add(
+                                  DeleteSavedLocation(state.savedLocations[index]["Name"])
+                              );
+                            },
+                          ),
                           onTap: () {
                             final location = state.savedLocations[index]["Location"];
                             Navigator.of(context).push<void>(
@@ -289,46 +311,32 @@ class _RequestEmergency extends StatelessWidget {
                               ),
                             );
                           },
-                          child: Column(
-                            children: [
-                              ListTile(
-                                title: Text(
-                                  state.savedLocations[index]["Name"],
-                                  style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                leading: const Icon(Icons.star_rounded),
-                              ),
-                              if (index < state.savedLocations.length)
-                                const Divider(
-                                    thickness: 1, color: Colors.black26)
-                            ],
-                          ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () async {
-                          await Navigator.of(context)
-                              .push(SaveLocationPage.route());
-                          if (context.mounted) {
-                            context
-                                .read<HomeBloc>()
-                                .add(const RefreshSavedLocations());
-                          }
-                        },
-                        child: const ListTile(
-                          title: Text(
-                            "Add Location",
-                            style: TextStyle(
-                                fontSize: 22, fontWeight: FontWeight.w500),
-                          ),
-                          leading: Icon(Icons.add_circle),
-                        ),
-                      ),
+                      if (index < state.savedLocations.length - 1)
+                        const Divider(thickness: 1, color: Colors.black26)
                     ],
                   ),
                 ),
+                GestureDetector(
+                  onTap: () async {
+                    await Navigator.of(context).push(SaveLocationPage.route());
+                    if (context.mounted) {
+                      context.read<HomeBloc>().add(const RefreshSavedLocations());
+                    }
+                  },
+                  child: const ListTile(
+                    title: Text(
+                      "Add Location",
+                      style: TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w500),
+                    ),
+                    leading: Icon(Icons.add_circle),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
