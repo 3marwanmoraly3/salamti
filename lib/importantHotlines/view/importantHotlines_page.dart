@@ -115,8 +115,8 @@ class _ImportantHotlinesState extends State<ImportantHotlines> {
                   child: Text(
                     items[index]["name"],
                     style: const TextStyle(fontSize: 20),
-                    softWrap: true, // Ensures the text wraps
-                    overflow: TextOverflow.clip, // Clips any overflow text
+                    softWrap: true,
+                    overflow: TextOverflow.clip,
                   ),
                 ),
                 IconButton(

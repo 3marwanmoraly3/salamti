@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salamti/app/app.dart';
 import 'package:salamti/medicalId/medicalId.dart';
 import 'package:salamti/changePassword/changePassword.dart';
+import 'package:salamti/changePhoneNumber/changePhoneNumber.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -41,11 +42,11 @@ class ProfilePage extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Image(
-                    image: AssetImage("assets/profile/images/person.png"),
+                    image: AssetImage("assets/profile/images/password.png"),
                     width: 30,
                   ),
                   title: const Text(
-                    "Account",
+                    "Change Password",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                   ),
                   tileColor: const Color(0x82d9d9d9),
@@ -55,8 +56,27 @@ class ProfilePage extends StatelessWidget {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                   onTap: () {
-                    Navigator.of(context)
-                        .push(ChangePasswordPage.route());
+                    Navigator.of(context).push(ChangePasswordPage.route());
+                  },
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: const Icon(
+                    Icons.phone_rounded,
+                    size: 30,
+                  ),
+                  title: const Text(
+                    "Change Phone Number",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                  ),
+                  tileColor: const Color(0x82d9d9d9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  contentPadding:
+                  const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                  onTap: () {
+                    Navigator.of(context).push(ChangePhoneNumberPage.route());
                   },
                 ),
                 const SizedBox(height: 20),
@@ -76,8 +96,7 @@ class ProfilePage extends StatelessWidget {
                   contentPadding:
                       const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                   onTap: () {
-                    Navigator.of(context)
-                        .push(MedicalIdPage.route());
+                    Navigator.of(context).push(MedicalIdPage.route());
                   },
                 ),
                 const SizedBox(height: 20),
