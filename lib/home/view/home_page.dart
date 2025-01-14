@@ -3,6 +3,8 @@ import 'package:salamti/emergencyContacts/emergencyContacts.dart';
 import 'package:salamti/profile/profile.dart';
 import 'package:salamti/requestEmergency/requestEmergency.dart';
 import 'package:salamti/pastActivities/pastActivities.dart';
+import 'package:salamti/emergencyGuides/emergencyGuides.dart';
+import 'package:salamti/importantHotlines/importantHotlines.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -273,56 +275,64 @@ class _EmergencyResources extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Container(
-          height: 115,
-          width: 165,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: const Color(0x82d9d9d9),
-          ),
-          child: const Stack(
-            children: [
-              Text(
-                "Guides",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Image(
-                  image: AssetImage("assets/home/images/cpr.png"),
-                  width: 35,
-                  height: 35,
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+              EmergencyGuides.route()),
+          child: Container(
+            height: 115,
+            width: 165,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: const Color(0x82d9d9d9),
+            ),
+            child: const Stack(
+              children: [
+                Text(
+                  "Guides",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
                 ),
-              )
-            ],
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Image(
+                    image: AssetImage("assets/home/images/cpr.png"),
+                    width: 35,
+                    height: 35,
+                  ),
+                )
+              ],
+            ),
           ),
         ),
-        Container(
-          height: 115,
-          width: 165,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            color: const Color(0x82d9d9d9),
-          ),
-          child: const Stack(
-            children: [
-              Text(
-                "Important\nHotlines",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Image(
-                  image: AssetImage("assets/home/images/hotline.png"),
-                  width: 35,
-                  height: 35,
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+              ImportantHotlines.route()),
+          child: Container(
+            height: 115,
+            width: 165,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: const Color(0x82d9d9d9),
+            ),
+            child: const Stack(
+              children: [
+                Text(
+                  "Important\nHotlines",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
                 ),
-              )
-            ],
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Image(
+                    image: AssetImage("assets/home/images/hotline.png"),
+                    width: 35,
+                    height: 35,
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       ],
